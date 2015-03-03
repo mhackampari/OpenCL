@@ -16,6 +16,10 @@
 #include <string>
 #include<CL/cl.h>
 #include<iostream>
+#include <fstream>
+#include <SDKUtil/CLUtil.hpp>
+
+using namespace std;
 
 
 class Knapsack{
@@ -29,11 +33,26 @@ class Knapsack{
     cl_int err;
     char *platform_info;
     size_t size;
+    cl_uint num_entries;
+    cl_device_id *device_list;
+    cl_uint num_devices;
+    bool *device_avbility;
+    cl_context context;
+    cl_command_queue queue;
+    cl_program program;
+    ifstream ofs;
+    
     //initialize variables
     public:Knapsack(){
         
     }
 
     
-    void queryOCLdevices ();
+    void queryOclPlatformInfo();
+    void queryOclDevice();
+    void createContextQueue();
+    void createProgramBuild();
+    void CL_CALLBACK myCallBack(cl_event event, cl_int cmd_exec_status, void *user_data);
+    void OpenCL_Context_Callback(const char *errinfo, const void *private_info, size_t cb, void *user_data);
+    
 };
