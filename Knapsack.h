@@ -34,13 +34,15 @@ class Knapsack{
     char *platform_info;
     size_t size;
     cl_uint num_entries;
-    cl_device_id *device_list;
+    cl_device_id *device_id;
     cl_uint num_devices;
     bool *device_avbility;
     cl_context context;
     cl_command_queue queue;
     cl_program program;
     ifstream ofs;
+    int *input_data;
+    int *output_data;
     
     //initialize variables
     public:Knapsack(){
@@ -52,6 +54,7 @@ class Knapsack{
     void queryOclDevice();
     void createContextQueue();
     void createProgramBuild();
+    void createKernel();
     void CL_CALLBACK myCallBack(cl_event event, cl_int cmd_exec_status, void *user_data);
     void OpenCL_Context_Callback(const char *errinfo, const void *private_info, size_t cb, void *user_data);
     
