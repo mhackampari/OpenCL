@@ -40,21 +40,24 @@ class Knapsack{
     cl_context context;
     cl_command_queue queue;
     cl_program program;
+    cl_mem input_mem;
+    cl_mem output_mem;
+    cl_kernel kernel;
     ifstream ofs;
-    int *input_data;
-    int *output_data;
+    int insrc[512];
+    int outsrc[512];
     
     //initialize variables
-    public:Knapsack(){
-        
-    }
+    public:Knapsack(){};
 
-    
     void queryOclPlatformInfo();
     void queryOclDevice();
     void createContextQueue();
     void createProgramBuild();
+    void createMemObjects();
     void createKernel();
+    void createExecModelMemObjects();
+    void cleanup();
     void CL_CALLBACK myCallBack(cl_event event, cl_int cmd_exec_status, void *user_data);
     void OpenCL_Context_Callback(const char *errinfo, const void *private_info, size_t cb, void *user_data);
     
