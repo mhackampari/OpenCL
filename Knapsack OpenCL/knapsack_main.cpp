@@ -6,7 +6,7 @@
  */
 #include <CL/cl.h>
 
-#include "Knapsack.h"
+#include "./Knapsack.h"
 using namespace std;
 
 /*query the total number of platforms available in the system.
@@ -497,7 +497,7 @@ void Knapsack::createProgramBuild() {
     string sourceKernel, line;
 
 
-    ofs.open("HelloWorld_Kernel.cl", ios_base::in);
+    ofs.open("..\\knapsack_toth.cl", ios_base::in);
     if (ofs.is_open()) {
         while (ofs.good()) {
             getline(ofs, line);
@@ -553,12 +553,6 @@ void Knapsack::createProgramBuild() {
 }
 
 void Knapsack::createMemObjects() {
-    //initializing array
-    for (int i = 0; i < 512; i++) {
-        insrc[i] = i;
-        outsrc[i] = 0;
-    }
-
     /*
      The OpenCL framework provides a way to package data into a memory object. 
      * By using a memory object, OpenCL allows easy packaging of all data and 
@@ -569,19 +563,28 @@ void Knapsack::createMemObjects() {
      */
 
     //http://stackoverflow.com/questions/3832963/two-ways-to-create-a-buffer-object-in-opencl-clcreatebuffer-vs-clcreatebuffer
-    input_mem = clCreateBuffer(
+    value_mem = clCreateBuffer(
             context, // a valid context
             CL_MEM_READ_ONLY, // bit-field flag to specify;  the usage of memory
-            sizeof (insrc), // size in bytes of the buffer to allocated
+            sizeof (value), // size in bytes of the buffer to allocated
+            NULL, // pointer to buffer data to be copied from host
+            &err // returned error code
+            );
+    if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+    
+    weight_mem = clCreateBuffer(
+            context, // a valid context
+            CL_MEM_READ_ONLY, // bit-field flag to specify;  the usage of memory
+            sizeof (weight), // size in bytes of the buffer to allocated
             NULL, // pointer to buffer data to be copied from host
             &err // returned error code
             );
     if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
 
-    output_mem = clCreateBuffer(
+    f_mem = clCreateBuffer(
             context, // a valid context
-            CL_MEM_WRITE_ONLY, // bit-field flag to specify
-            sizeof (outsrc), // size in bytes of the buffer to allocated
+            CL_MEM_READ_WRITE, // bit-field flag to specify
+            sizeof(f), // size in bytes of the buffer to allocated
             NULL, // pointer to buffer data to be copied from host
             &err // returned error code
             );
@@ -592,11 +595,23 @@ void Knapsack::createMemObjects() {
      */
     err = clEnqueueWriteBuffer(
             queue, //valid command queue 
-            input_mem, //memory buffer object to write to
+            value_mem, //memory buffer object to write to
             CL_TRUE, // indicate blocking write
             0, //the offset in the buffer object to write to
-            sizeof (insrc), //size in bytes of data to write to
-            insrc, //pointer to buffer in host mem to read data from
+            sizeof (value), //size in bytes of data to write to
+            value, //pointer to buffer in host mem to read data from
+            0, //number of events in the event list 
+            NULL, //list of events that needs to complete before this executes
+            NULL); //event object to return on completion
+    if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+    
+    err = clEnqueueWriteBuffer(
+            queue, //valid command queue 
+            weight_mem, //memory buffer object to write to
+            CL_TRUE, // indicate blocking write
+            0, //the offset in the buffer object to write to
+            sizeof (weight), //size in bytes of data to write to
+            weight, //pointer to buffer in host mem to read data from
             0, //number of events in the event list 
             NULL, //list of events that needs to complete before this executes
             NULL); //event object to return on completion
@@ -612,7 +627,7 @@ void Knapsack::createKernel() {
     char *kernelName = NULL;
     kernel = clCreateKernel(
             program, // a valid program object that has been successfully built
-            "helloworld", // the name of the kernel declared with __kernel
+            "knapsack", // the name of the kernel declared with __kernel
             &err // error return code
             );
     if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
@@ -620,16 +635,40 @@ void Knapsack::createKernel() {
     err = clSetKernelArg(
             kernel, //valid kernel object
             0, //the specific argument of a kernel
+            sizeof (int), //the size of the argument data
+            &capacity //a pointer of data used as the argument
+            );
+    if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+    
+    err = clSetKernelArg(
+            kernel, //valid kernel object
+            1, //the specific argument of a kernel
+            sizeof (int), //the size of the argument data
+            &sumWeight //a pointer of data used as the argument
+            );
+    if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+    
+    err = clSetKernelArg(
+            kernel, //valid kernel object
+            2, //the specific argument of a kernel
             sizeof (cl_mem), //the size of the argument data
-            &input_mem //a pointer of data used as the argument
+            &value_mem //a pointer of data used as the argument
             );
     if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
 
     err = clSetKernelArg(
             kernel, //valid kernel object
-            1, //the specific argument of a kernel
+            3, //the specific argument of a kernel
             sizeof (cl_mem), //the size of the argument data
-            &output_mem //a pointer of data used as the argument
+            &weight_mem //a pointer of data used as the argument
+            );
+    if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+    
+    err = clSetKernelArg(
+            kernel, //valid kernel object
+            4, //the specific argument of a kernel
+            sizeof (cl_mem), //the size of the argument data
+            &f_mem //a pointer of data used as the argument
             );
     if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
 
@@ -652,7 +691,8 @@ void Knapsack::createKernel() {
 }
 
 void Knapsack::createExecModelMemObjects() {
-    size_t global = 512;
+    size_t global = 3;
+    
 
     /*
      * Enqueues a command to execute a kernel on a device.
@@ -683,22 +723,22 @@ void Knapsack::createExecModelMemObjects() {
     /* Enqueues a command to read data from a buffer object into host memory.
      * This function is typically used to READ RESULTS FROM the KERNEL execution
      * back to host program. 
-     * Reads the cl memory "output_mem" on device to the host variable "outsrc".
+     * Reads the cl memory "output_mem" on device to the host variable "f".
      */
     err = clEnqueueReadBuffer(
             queue, //valid command queue 
-            output_mem, //memory buffer object to write to
+            f_mem, //memory buffer object to write to
             CL_TRUE, // indicate blocking write
             0, //the offset in the buffer object to write to
-            sizeof (outsrc), //size in bytes of data to write to
-            outsrc, //pointer to buffer in host mem to read data from
+            sizeof(f), //size in bytes of data to write to
+            f, //pointer to buffer in host mem to read data from
             0, //number of events in the event list 
             NULL, //list of events that needs to complete before this executes
             NULL); //event object to return on completion
     if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
 
-    for (int i = 0; i < 512; i++) {
-        cout << outsrc[i] << endl;
+    for (int i = 0; i < 6; i++) {
+        cout << f[i] << endl;
     }
 
 }
@@ -708,9 +748,11 @@ void Knapsack::cleanup() {
     if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
     err = clReleaseProgram(program);
     if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
-    err = clReleaseMemObject(input_mem);
+    err = clReleaseMemObject(value_mem);
     if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
-    err = clReleaseMemObject(output_mem);
+    err = clReleaseMemObject(weight_mem);
+    if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+    err = clReleaseMemObject(f_mem);
     if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
     err = clReleaseCommandQueue(queue);
     if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
@@ -719,6 +761,17 @@ void Knapsack::cleanup() {
     
     free(platforms);
     free(device_id);
+}
+Knapsack::Knapsack(){
+    
+    for(int i = 0; i < 6; i++){
+        f[i] = 0;
+    }
+    
+    for (int i = 0; i<3; i++){
+    cout << weight[i] << " " << value[i] << endl;
+    }
+    
 }
 
 int main(int argc, char** argv) {

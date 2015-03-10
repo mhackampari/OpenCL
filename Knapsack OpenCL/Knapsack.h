@@ -21,7 +21,6 @@
 
 using namespace std;
 
-
 class Knapsack{
     //variables
     
@@ -40,15 +39,19 @@ class Knapsack{
     cl_context context;
     cl_command_queue queue;
     cl_program program;
-    cl_mem input_mem;
-    cl_mem output_mem;
+    cl_mem value_mem, weight_mem;
+    cl_mem f_mem;
     cl_kernel kernel;
     ifstream ofs;
-    int insrc[512];
-    int outsrc[512];
+    
+    int value[3] = {1, 3, 2};
+    int weight[3] = {2, 3, 2};
+    int sumWeight = 7;
+    int capacity = 5;
+    int f[6] = {0, 0, 0, 0, 0, 0};
     
     //initialize variables
-    public:Knapsack(){};
+    public:Knapsack();
 
     void queryOclPlatformInfo();
     void queryOclDevice();
