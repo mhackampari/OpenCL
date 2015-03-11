@@ -1,5 +1,5 @@
 /* Please Write the OpenCL Kernel(s) code here*/
-void kernel knapsack(int capacity, int sumW, global int *value, global int *weight, global int *f){
+void kernel knapsack(int capacity, int sumW, global int *value, global int *weight,  global int* M, global int *f){
     size_t gid = get_global_id(0);
     int cmax = 0;
     
@@ -10,7 +10,9 @@ void kernel knapsack(int capacity, int sumW, global int *value, global int *weig
         else cmax = weight[gid];
         
     for(int c = capacity; c > cmax-1; c--){
-        if(f[c] < f[c - weight[gid]] + value[gid])
+        if(f[c] < f[c - weight[gid]] + value[gid]){
             f[c] = f[c - weight[gid]] + value[gid];
+            M[c-1+5*gid] = 1;
         }
     }
+}

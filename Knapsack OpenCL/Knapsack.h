@@ -17,7 +17,6 @@
 #include<CL/cl.h>
 #include<iostream>
 #include <fstream>
-#include <SDKUtil/CLUtil.hpp>
 
 using namespace std;
 
@@ -43,15 +42,16 @@ class Knapsack{
     cl_command_queue queue;
     cl_program program;
     cl_mem value_mem, weight_mem;
-    cl_mem f_mem;
+    cl_mem f_mem, M_mem;
     cl_kernel kernel;
     ifstream ofs;
     
-    int value[3] = {1, 3, 2};
-    int weight[3] = {2, 3, 2};
-    int sumWeight = 7;
-    int capacity = 5;
-    int f[6] = {0, 0, 0, 0, 0, 0};
+    int M[3][5];
+    int value[3] ;
+    int weight[3];
+    int sumWeight;
+    int capacity;
+    int f[6];
     
     //initialize variables
     public:Knapsack();

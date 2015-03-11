@@ -581,10 +581,19 @@ void Knapsack::createMemObjects() {
             );
     if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
+    M_mem = clCreateBuffer(
+            context, // a valid context
+            CL_MEM_READ_WRITE, // bit-field flag to specify
+            sizeof(M), // size in bytes of the buffer to allocated
+            NULL, // pointer to buffer data to be copied from host
+            &err // returned error code
+            );
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
     f_mem = clCreateBuffer(
             context, // a valid context
             CL_MEM_READ_WRITE, // bit-field flag to specify
-            sizeof (f), // size in bytes of the buffer to allocated
+            sizeof(f), // size in bytes of the buffer to allocated
             NULL, // pointer to buffer data to be copied from host
             &err // returned error code
             );
@@ -612,6 +621,18 @@ void Knapsack::createMemObjects() {
             0, //the offset in the buffer object to write to
             sizeof (weight), //size in bytes of data to write to
             weight, //pointer to buffer in host mem to read data from
+            0, //number of events in the event list 
+            NULL, //list of events that needs to complete before this executes
+            NULL); //event object to return on completion
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+    
+    err = clEnqueueWriteBuffer(
+            queue, //valid command queue 
+            M_mem, //memory buffer object to write to
+            CL_TRUE, // indicate blocking write
+            0, //the offset in the buffer object to write to
+            sizeof (M), //size in bytes of data to write to
+            M, //pointer to buffer in host mem to read data from
             0, //number of events in the event list 
             NULL, //list of events that needs to complete before this executes
             NULL); //event object to return on completion
@@ -668,6 +689,14 @@ void Knapsack::createKernel() {
             kernel, //valid kernel object
             4, //the specific argument of a kernel
             sizeof (cl_mem), //the size of the argument data
+            &M_mem //a pointer of data used as the argument
+            );
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+    
+    err = clSetKernelArg(
+            kernel, //valid kernel object
+            5, //the specific argument of a kernel
+            sizeof (cl_mem), //the size of the argument data
             &f_mem //a pointer of data used as the argument
             );
     if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
@@ -703,10 +732,10 @@ void Knapsack::createExecModelMemObjects() {
      * cannot be assigned arbitrarily; the provided OpenCL function clGetKernelWorkGroupInfo()
      * must be used to query the group size info of a device.
      */
-    
-    *global_work_items =(size_t)sizeof(value)/sizeof(int);
+
+    *global_work_items = (size_t)sizeof (value) / sizeof (int);
     *local_work_items = getLocalWorkItems(*global_work_items, *device_max_work_group_size);
-   
+
     err = clEnqueueNDRangeKernel(
             queue, // valid command queue
             kernel,
@@ -737,37 +766,46 @@ void Knapsack::createExecModelMemObjects() {
             NULL, //list of events that needs to complete before this executes
             NULL); //event object to return on completion
     if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+    
+    err = clEnqueueReadBuffer(
+            queue, //valid command queue 
+            M_mem, //memory buffer object to write to
+            CL_TRUE, // indicate blocking write
+            0, //the offset in the buffer object to write to
+            sizeof(M), //size in bytes of data to write to
+            M, //pointer to buffer in host mem to read data from
+            0, //number of events in the event list 
+            NULL, //list of events that needs to complete before this executes
+            NULL); //event object to return on completion
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
     for (int i = 0; i < 6; i++) {
         cout << f[i] << endl;
     }
+    
+    for (int i = 0; i < 15; i++) {
+        cout <<*(*M+i)<< "; ";
+        if (i == 4 || i==9 )cout << endl;
+    }
 
 }
-size_t Knapsack::getLocalWorkItems(size_t globalThreads, size_t maxWorkItemSize)
-{
+
+size_t Knapsack::getLocalWorkItems(size_t globalThreads, size_t maxWorkItemSize) {
     /* Each kernel execution in OpenCL is called a work-item thus is important 
      * specify to OpenCL how many work-items are needed to process all data.
      * 
      */
-    if(maxWorkItemSize < globalThreads)
-    {
-        if(globalThreads%maxWorkItemSize == 0)
-        {
+    if (maxWorkItemSize < globalThreads) {
+        if (globalThreads % maxWorkItemSize == 0) {
             return maxWorkItemSize;
-        }
-        else
-        {
-            for(size_t i=maxWorkItemSize-1; i > 0; --i)
-            {
-                if(globalThreads%i == 0)
-                {
+        } else {
+            for (size_t i = maxWorkItemSize - 1; i > 0; --i) {
+                if (globalThreads % i == 0) {
                     return i;
                 }
             }
         }
-    }
-    else
-    {
+    } else {
         return globalThreads;
     }
     return SDK_SUCCESS;
@@ -906,19 +944,32 @@ string Knapsack::getErrorCode(int e) {
     }
 }
 
-Knapsack::Knapsack() {
+Knapsack::Knapsack() :
+M{0},
+value{1, 3, 2},
+weight{2, 3, 2},
+f{0},
+capacity(5),
+sumWeight(7){
 
     for (int i = 0; i < 6; i++) {
         f[i] = 0;
     }
 
-    for (int i = 0; i < 3; i++){
+    for (int i = 0; i < 3; i++) {
         cout << weight[i] << " " << value[i] << endl;
+        cout << **(M+i) << " VS "<<*(*M+i)<<" VS "<<*M+i<<" VS "<<*(M+i) <<" VS " << M[i]<<" VS "<<&M[0][i] << endl;
     }
     
-    global_work_items = (size_t *)malloc(sizeof(size_t));
-    local_work_items = (size_t *)malloc(sizeof(size_t));
-  
+    //
+    for (int i = 0; i < 15; i++) {
+        cout << "M: "<<*(*M+i);
+        cout << " Add: "<<(*M+i) << endl;
+    }
+
+    global_work_items = (size_t *) malloc(sizeof (size_t));
+    local_work_items = (size_t *) malloc(sizeof (size_t));
+
 }
 
 int main(int argc, char** argv) {
