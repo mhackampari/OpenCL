@@ -9,13 +9,13 @@ def num_obj(): return len(items) #total number of objects
 print("\nCAPACITY: ", capacity())
 print("\nNUM OBJECTS: ", num_obj())
 
-def weightTot(item=[]):
+def weight_tot(item=[]):
     sumW = 0
     for x in item:
         sumW += x[1]
     return sumW
 
-sumW = weightTot(items)
+sumW = weight_tot(items)
 print("\nTotal weight: ", sumW)
 c = 0 #temp var for capacity
 k=1 #temp var for obj
@@ -40,7 +40,7 @@ for k in range(len(items)):
         print("cmax: ", cmax, "c: ", c)
         if f[c]<f[c-items[k][1]]+items[k][0]:
             print("f[%d]: "%(c), f[c], "f[%d]: "%(c-1-items[k][1]), 
-            f[c-items[k][1]], "weight: ", items[k][0], "value: ", items[k][0])
+            f[c-items[k][1]], "weight: ", items[k][1], "value: ", items[k][0])
             
             f[c] = f[c-items[k][1]]+items[k][0]
             print("f[%d] = f[%d]+%d: "%(c, c-1-items[k][1], items[k][0] ), f[c])
@@ -49,6 +49,26 @@ for k in range(len(items)):
         print("\n=============\nupdated function: ", f)
         
 print(M)
+
+
+#Backtracking of the results
+c = capacity()-1
+for y in range(len(items)-1, -1, -1):
+    for x in range(c, 0, -1):
+        if(M[y][x]!=0):
+            print("selected items: ", items[y])
+            c = c - items[y][1]
+            break
+        if(M[y][x]==0):
+            x=0
+            break
+            
+
+
+
+
+
+
 
 
 
