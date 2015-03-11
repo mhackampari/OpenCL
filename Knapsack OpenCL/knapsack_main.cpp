@@ -68,7 +68,7 @@ void Knapsack::queryOclDevice() {
             NULL, //list of devices
             &num_devices); //returns num of present devices
 
-    if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
     device_id = (cl_device_id *) malloc(num_devices * sizeof (cl_device_id));
 
@@ -78,7 +78,7 @@ void Knapsack::queryOclDevice() {
             device_id, //list of devices
             NULL); //returns num of present devices
 
-    if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
     for (int i = 0; i < num_devices; i++) {
 
@@ -90,7 +90,7 @@ void Knapsack::queryOclDevice() {
                 NULL,
                 &size);
 
-        if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+        if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
         device_avbility = (bool *)malloc(size * sizeof (bool));
 
@@ -100,7 +100,7 @@ void Knapsack::queryOclDevice() {
                 device_avbility,
                 NULL);
 
-        if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+        if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
         cout << "\nCL_DEVICE_AVAILABLE: " << device_avbility[i];
 
@@ -110,7 +110,7 @@ void Knapsack::queryOclDevice() {
                 NULL,
                 &size);
 
-        if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+        if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
         cl_device_exec_capabilities *device_exec_cap = (cl_device_exec_capabilities *) malloc(size * sizeof (cl_device_exec_capabilities));
 
@@ -120,7 +120,7 @@ void Knapsack::queryOclDevice() {
                 device_exec_cap,
                 NULL);
 
-        if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+        if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
         cout << "\nCL_DEVICE_EXECUTION_CAPABILITIES: " << device_exec_cap[i];
 
@@ -130,7 +130,7 @@ void Knapsack::queryOclDevice() {
                 NULL,
                 &size);
 
-        if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+        if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
         cl_ulong *device_global_mem_cache_size = (cl_ulong *) malloc(size * sizeof (cl_ulong));
 
@@ -140,7 +140,7 @@ void Knapsack::queryOclDevice() {
                 device_global_mem_cache_size,
                 NULL);
 
-        if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+        if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
         cout << "\n CL_DEVICE_GLOBAL_MEM_CACHE_SIZE: " << device_global_mem_cache_size[i];
 
@@ -150,7 +150,7 @@ void Knapsack::queryOclDevice() {
                 NULL,
                 &size);
 
-        if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+        if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
         cl_device_mem_cache_type *device_global_mem_cache_type = (cl_device_mem_cache_type *) malloc(size * sizeof (cl_device_mem_cache_type));
 
@@ -160,7 +160,7 @@ void Knapsack::queryOclDevice() {
                 device_global_mem_cache_type,
                 NULL);
 
-        if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+        if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
         cout << "\n CL_DEVICE_GLOBAL_MEM_CACHE_TYPE: " << device_global_mem_cache_type[i];
 
@@ -170,7 +170,7 @@ void Knapsack::queryOclDevice() {
                 NULL,
                 &size);
 
-        if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+        if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
         cl_uint *device_global_mem_cacheline_size = (cl_uint *) malloc(size * sizeof (cl_uint));
 
@@ -180,7 +180,7 @@ void Knapsack::queryOclDevice() {
                 device_global_mem_cacheline_size,
                 NULL);
 
-        if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+        if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
         cout << "\n CL_DEVICE_GLOBAL_MEM_CACHE_TYPE: " << device_global_mem_cacheline_size[i];
 
@@ -190,7 +190,7 @@ void Knapsack::queryOclDevice() {
                 NULL,
                 &size);
 
-        if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+        if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
         cl_ulong *device_global_mem_size = (cl_ulong *) malloc(size * sizeof (cl_ulong));
 
@@ -200,7 +200,7 @@ void Knapsack::queryOclDevice() {
                 device_global_mem_size,
                 NULL);
 
-        if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+        if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
         cout << "\n CL_DEVICE_GLOBAL_MEM_SIZE: " << device_global_mem_size[i];
 
@@ -210,7 +210,7 @@ void Knapsack::queryOclDevice() {
                 NULL,
                 &size);
 
-        if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+        if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
         cl_ulong *device_local_mem_size = (cl_ulong *) malloc(size * sizeof (cl_ulong));
 
@@ -220,7 +220,7 @@ void Knapsack::queryOclDevice() {
                 device_local_mem_size,
                 NULL);
 
-        if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+        if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
         cout << "\n CL_DEVICE_LOCAL_MEM_SIZE: " << device_local_mem_size[i];
 
@@ -230,7 +230,7 @@ void Knapsack::queryOclDevice() {
                 NULL,
                 &size);
 
-        if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+        if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
         cl_device_local_mem_type *device_local_mem_type = (cl_device_local_mem_type *) malloc(size * sizeof (cl_device_local_mem_type));
 
@@ -240,7 +240,7 @@ void Knapsack::queryOclDevice() {
                 device_local_mem_type,
                 NULL);
 
-        if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+        if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
         cout << "\n CL_DEVICE_LOCAL_MEM_SIZE: " << device_local_mem_type[i];
 
@@ -250,7 +250,7 @@ void Knapsack::queryOclDevice() {
                 NULL,
                 &size);
 
-        if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+        if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
         cl_uint *device_max_clock_freq = (cl_uint *) malloc(size * sizeof (cl_uint));
 
@@ -260,7 +260,7 @@ void Knapsack::queryOclDevice() {
                 device_max_clock_freq,
                 NULL);
 
-        if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+        if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
         cout << "\n CL_DEVICE_MAX_CLOCK_FREQUENCY: " << device_max_clock_freq[i];
 
@@ -271,7 +271,7 @@ void Knapsack::queryOclDevice() {
                 NULL,
                 &size);
 
-        if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+        if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
         cl_uint *device_max_compute_units = (cl_uint *) malloc(size * sizeof (cl_uint));
 
@@ -281,7 +281,7 @@ void Knapsack::queryOclDevice() {
                 device_max_compute_units,
                 NULL);
 
-        if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+        if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
         cout << "\n CL_DEVICE_MAX_COMPUTE_UNITS: " << device_max_compute_units[i];
 
@@ -294,7 +294,7 @@ void Knapsack::queryOclDevice() {
                 NULL,
                 &size);
 
-        if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+        if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
         cl_ulong *device_max_mem_alloc_size = (cl_ulong *) malloc(size * sizeof (cl_ulong));
 
@@ -304,7 +304,7 @@ void Knapsack::queryOclDevice() {
                 device_max_mem_alloc_size,
                 NULL);
 
-        if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+        if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
         cout << "\n CL_DEVICE_MAX_MEM_ALLOC_SIZE: " << device_max_mem_alloc_size[i];
 
@@ -318,9 +318,9 @@ void Knapsack::queryOclDevice() {
                 NULL,
                 &size);
 
-        if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+        if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
-        size_t *device_max_work_group_size = (size_t *) malloc(size * sizeof (size_t));
+        device_max_work_group_size = (size_t *) malloc(size * sizeof (size_t));
 
         err = clGetDeviceInfo(device_id[i],
                 CL_DEVICE_MAX_WORK_GROUP_SIZE,
@@ -328,7 +328,7 @@ void Knapsack::queryOclDevice() {
                 device_max_work_group_size,
                 NULL);
 
-        if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+        if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
         cout << "\n CL_DEVICE_MAX_WORK_GROUP_SIZE: " << device_max_work_group_size[i];
 
@@ -343,7 +343,7 @@ void Knapsack::queryOclDevice() {
                 NULL,
                 &size);
 
-        if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+        if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
         cl_uint *device_max_work_item_dim = (cl_uint *) malloc(size * sizeof (cl_uint));
 
@@ -353,7 +353,7 @@ void Knapsack::queryOclDevice() {
                 device_max_work_item_dim,
                 NULL);
 
-        if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+        if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
         cout << "\n CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS: " << device_max_work_item_dim[i];
 
@@ -364,7 +364,7 @@ void Knapsack::queryOclDevice() {
                 NULL,
                 &size);
 
-        if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+        if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
         size_t *device_max_work_items = (size_t *) malloc(size * sizeof (size_t));
 
@@ -374,7 +374,7 @@ void Knapsack::queryOclDevice() {
                 device_max_work_items,
                 NULL);
 
-        if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+        if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
         cout << "\n CL_DEVICE_MAX_WORK_ITEM_SIZES 1: " << device_max_work_items[0];
         cout << "\n CL_DEVICE_MAX_WORK_ITEM_SIZES 2: " << device_max_work_items[1];
@@ -386,7 +386,7 @@ void Knapsack::queryOclDevice() {
                 NULL,
                 &size);
 
-        if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+        if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
         char *device_type = (char *) malloc(size * sizeof (char));
 
@@ -396,7 +396,7 @@ void Knapsack::queryOclDevice() {
                 device_type,
                 NULL);
 
-        if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+        if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
         cout << "\n CL_DEVICE_TYPE: " << device_type;
 
@@ -406,7 +406,7 @@ void Knapsack::queryOclDevice() {
                 NULL,
                 &size);
 
-        if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+        if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
         char *device_vendor = (char *) malloc(sizeof (char)*size);
 
@@ -425,7 +425,7 @@ void Knapsack::queryOclDevice() {
                 NULL,
                 &size);
 
-        if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+        if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
         char *device_version = (char *) malloc(size * sizeof (char));
 
@@ -435,7 +435,7 @@ void Knapsack::queryOclDevice() {
                 device_version,
                 NULL);
 
-        if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+        if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
         cout << "\n CL_DEVICE_VERSION: " << string(device_version);
 
@@ -445,7 +445,7 @@ void Knapsack::queryOclDevice() {
                 NULL,
                 &size);
 
-        if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+        if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
         char *driver_version = (char *) malloc(size * sizeof (char));
 
@@ -455,7 +455,7 @@ void Knapsack::queryOclDevice() {
                 driver_version,
                 NULL);
 
-        if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+        if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
         cout << "\n CL_DRIVER_VERSION: " << string(driver_version);
 
@@ -479,14 +479,14 @@ void Knapsack::createContextQueue() {
             NULL,
             &err);
 
-    if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
     queue = clCreateCommandQueue(context,
             device_id[0],
             NULL,
             &err);
 
-    if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
 }
 
@@ -522,7 +522,7 @@ void Knapsack::createProgramBuild() {
             NULL,
             &err);
 
-    if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
     err = clBuildProgram(
             program,
@@ -533,7 +533,7 @@ void Knapsack::createProgramBuild() {
             NULL);
 
     if (err != CL_SUCCESS) {
-        cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
         printf("Error building program\n");
         char buffer[4096];
         size_t length;
@@ -570,8 +570,8 @@ void Knapsack::createMemObjects() {
             NULL, // pointer to buffer data to be copied from host
             &err // returned error code
             );
-    if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
-    
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
     weight_mem = clCreateBuffer(
             context, // a valid context
             CL_MEM_READ_ONLY, // bit-field flag to specify;  the usage of memory
@@ -579,16 +579,16 @@ void Knapsack::createMemObjects() {
             NULL, // pointer to buffer data to be copied from host
             &err // returned error code
             );
-    if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
     f_mem = clCreateBuffer(
             context, // a valid context
             CL_MEM_READ_WRITE, // bit-field flag to specify
-            sizeof(f), // size in bytes of the buffer to allocated
+            sizeof (f), // size in bytes of the buffer to allocated
             NULL, // pointer to buffer data to be copied from host
             &err // returned error code
             );
-    if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
     /*Enqueues a command to write data from host to memory to a buffer object.
      *This functional is typically used to provide data for the kernel processing. 
@@ -603,8 +603,8 @@ void Knapsack::createMemObjects() {
             0, //number of events in the event list 
             NULL, //list of events that needs to complete before this executes
             NULL); //event object to return on completion
-    if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
-    
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
     err = clEnqueueWriteBuffer(
             queue, //valid command queue 
             weight_mem, //memory buffer object to write to
@@ -615,7 +615,7 @@ void Knapsack::createMemObjects() {
             0, //number of events in the event list 
             NULL, //list of events that needs to complete before this executes
             NULL); //event object to return on completion
-    if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 }
 
 void Knapsack::createKernel() {
@@ -630,7 +630,7 @@ void Knapsack::createKernel() {
             "knapsack", // the name of the kernel declared with __kernel
             &err // error return code
             );
-    if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
     err = clSetKernelArg(
             kernel, //valid kernel object
@@ -638,23 +638,23 @@ void Knapsack::createKernel() {
             sizeof (int), //the size of the argument data
             &capacity //a pointer of data used as the argument
             );
-    if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
-    
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
     err = clSetKernelArg(
             kernel, //valid kernel object
             1, //the specific argument of a kernel
             sizeof (int), //the size of the argument data
             &sumWeight //a pointer of data used as the argument
             );
-    if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
-    
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
     err = clSetKernelArg(
             kernel, //valid kernel object
             2, //the specific argument of a kernel
             sizeof (cl_mem), //the size of the argument data
             &value_mem //a pointer of data used as the argument
             );
-    if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
     err = clSetKernelArg(
             kernel, //valid kernel object
@@ -662,15 +662,15 @@ void Knapsack::createKernel() {
             sizeof (cl_mem), //the size of the argument data
             &weight_mem //a pointer of data used as the argument
             );
-    if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
-    
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
     err = clSetKernelArg(
             kernel, //valid kernel object
             4, //the specific argument of a kernel
             sizeof (cl_mem), //the size of the argument data
             &f_mem //a pointer of data used as the argument
             );
-    if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
     /*each kernel execution in OpenCL is called a work-item. 
      * OpenCL exploits parallel computation of the compute devices by having 
@@ -685,15 +685,12 @@ void Knapsack::createKernel() {
             &size,
             NULL);
 
-    if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     cout << "\nCL_KERNEL_WORK_GROUP_SIZE: " << size << endl;
 
 }
 
 void Knapsack::createExecModelMemObjects() {
-    size_t global = 3;
-    
-
     /*
      * Enqueues a command to execute a kernel on a device.
      * 
@@ -706,19 +703,23 @@ void Knapsack::createExecModelMemObjects() {
      * cannot be assigned arbitrarily; the provided OpenCL function clGetKernelWorkGroupInfo()
      * must be used to query the group size info of a device.
      */
+    
+    *global_work_items =(size_t)sizeof(value)/sizeof(int);
+    *local_work_items = getLocalWorkItems(*global_work_items, *device_max_work_group_size);
+   
     err = clEnqueueNDRangeKernel(
             queue, // valid command queue
             kernel,
             // valid kernel object
             1, // the work problem dimensions
             NULL, //must be NULL
-            &global, // work-items for each dimension
-            NULL, // work-group size for each dimension
+            global_work_items, // work-items for each dimension
+            local_work_items, // work-group size for each dimension
             0, // number of event in the event list
             NULL, // list of events that needs to complete before this executes
             NULL // event object to return on completion
             );
-    if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
     /* Enqueues a command to read data from a buffer object into host memory.
      * This function is typically used to READ RESULTS FROM the KERNEL execution
@@ -730,52 +731,197 @@ void Knapsack::createExecModelMemObjects() {
             f_mem, //memory buffer object to write to
             CL_TRUE, // indicate blocking write
             0, //the offset in the buffer object to write to
-            sizeof(f), //size in bytes of data to write to
+            sizeof (f), //size in bytes of data to write to
             f, //pointer to buffer in host mem to read data from
             0, //number of events in the event list 
             NULL, //list of events that needs to complete before this executes
             NULL); //event object to return on completion
-    if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
     for (int i = 0; i < 6; i++) {
         cout << f[i] << endl;
     }
 
 }
+size_t Knapsack::getLocalWorkItems(size_t globalThreads, size_t maxWorkItemSize)
+{
+    /* Each kernel execution in OpenCL is called a work-item thus is important 
+     * specify to OpenCL how many work-items are needed to process all data.
+     * 
+     */
+    if(maxWorkItemSize < globalThreads)
+    {
+        if(globalThreads%maxWorkItemSize == 0)
+        {
+            return maxWorkItemSize;
+        }
+        else
+        {
+            for(size_t i=maxWorkItemSize-1; i > 0; --i)
+            {
+                if(globalThreads%i == 0)
+                {
+                    return i;
+                }
+            }
+        }
+    }
+    else
+    {
+        return globalThreads;
+    }
+    return SDK_SUCCESS;
+}
 
 void Knapsack::cleanup() {
     err = clReleaseKernel(kernel);
-    if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     err = clReleaseProgram(program);
-    if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     err = clReleaseMemObject(value_mem);
-    if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     err = clReleaseMemObject(weight_mem);
-    if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     err = clReleaseMemObject(f_mem);
-    if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     err = clReleaseCommandQueue(queue);
-    if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     err = clReleaseContext(context);
-    if (err != CL_SUCCESS)cout << "\n!!!" << appsdk::getOpenCLErrorCodeStr(err) << endl;
-    
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
     free(platforms);
     free(device_id);
 }
-Knapsack::Knapsack(){
-    
-    for(int i = 0; i < 6; i++){
+
+string Knapsack::getErrorCode(int e) {
+
+    int errorCode = (int) e;
+    switch (errorCode) {
+        case CL_DEVICE_NOT_FOUND:
+            return "CL_DEVICE_NOT_FOUND";
+        case CL_DEVICE_NOT_AVAILABLE:
+            return "CL_DEVICE_NOT_AVAILABLE";
+        case CL_COMPILER_NOT_AVAILABLE:
+            return "CL_COMPILER_NOT_AVAILABLE";
+        case CL_MEM_OBJECT_ALLOCATION_FAILURE:
+            return "CL_MEM_OBJECT_ALLOCATION_FAILURE";
+        case CL_OUT_OF_RESOURCES:
+            return "CL_OUT_OF_RESOURCES";
+        case CL_OUT_OF_HOST_MEMORY:
+            return "CL_OUT_OF_HOST_MEMORY";
+        case CL_PROFILING_INFO_NOT_AVAILABLE:
+            return "CL_PROFILING_INFO_NOT_AVAILABLE";
+        case CL_MEM_COPY_OVERLAP:
+            return "CL_MEM_COPY_OVERLAP";
+        case CL_IMAGE_FORMAT_MISMATCH:
+            return "CL_IMAGE_FORMAT_MISMATCH";
+        case CL_IMAGE_FORMAT_NOT_SUPPORTED:
+            return "CL_IMAGE_FORMAT_NOT_SUPPORTED";
+        case CL_BUILD_PROGRAM_FAILURE:
+            return "CL_BUILD_PROGRAM_FAILURE";
+        case CL_MAP_FAILURE:
+            return "CL_MAP_FAILURE";
+        case CL_MISALIGNED_SUB_BUFFER_OFFSET:
+            return "CL_MISALIGNED_SUB_BUFFER_OFFSET";
+        case CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST:
+            return "CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST";
+        case CL_INVALID_VALUE:
+            return "CL_INVALID_VALUE";
+        case CL_INVALID_DEVICE_TYPE:
+            return "CL_INVALID_DEVICE_TYPE";
+        case CL_INVALID_PLATFORM:
+            return "CL_INVALID_PLATFORM";
+        case CL_INVALID_DEVICE:
+            return "CL_INVALID_DEVICE";
+        case CL_INVALID_CONTEXT:
+            return "CL_INVALID_CONTEXT";
+        case CL_INVALID_QUEUE_PROPERTIES:
+            return "CL_INVALID_QUEUE_PROPERTIES";
+        case CL_INVALID_COMMAND_QUEUE:
+            return "CL_INVALID_COMMAND_QUEUE";
+        case CL_INVALID_HOST_PTR:
+            return "CL_INVALID_HOST_PTR";
+        case CL_INVALID_MEM_OBJECT:
+            return "CL_INVALID_MEM_OBJECT";
+        case CL_INVALID_IMAGE_FORMAT_DESCRIPTOR:
+            return "CL_INVALID_IMAGE_FORMAT_DESCRIPTOR";
+        case CL_INVALID_IMAGE_SIZE:
+            return "CL_INVALID_IMAGE_SIZE";
+        case CL_INVALID_SAMPLER:
+            return "CL_INVALID_SAMPLER";
+        case CL_INVALID_BINARY:
+            return "CL_INVALID_BINARY";
+        case CL_INVALID_BUILD_OPTIONS:
+            return "CL_INVALID_BUILD_OPTIONS";
+        case CL_INVALID_PROGRAM:
+            return "CL_INVALID_PROGRAM";
+        case CL_INVALID_PROGRAM_EXECUTABLE:
+            return "CL_INVALID_PROGRAM_EXECUTABLE";
+        case CL_INVALID_KERNEL_NAME:
+            return "CL_INVALID_KERNEL_NAME";
+        case CL_INVALID_KERNEL_DEFINITION:
+            return "CL_INVALID_KERNEL_DEFINITION";
+        case CL_INVALID_KERNEL:
+            return "CL_INVALID_KERNEL";
+        case CL_INVALID_ARG_INDEX:
+            return "CL_INVALID_ARG_INDEX";
+        case CL_INVALID_ARG_VALUE:
+            return "CL_INVALID_ARG_VALUE";
+        case CL_INVALID_ARG_SIZE:
+            return "CL_INVALID_ARG_SIZE";
+        case CL_INVALID_KERNEL_ARGS:
+            return "CL_INVALID_KERNEL_ARGS";
+        case CL_INVALID_WORK_DIMENSION:
+            return "CL_INVALID_WORK_DIMENSION";
+        case CL_INVALID_WORK_GROUP_SIZE:
+            return "CL_INVALID_WORK_GROUP_SIZE";
+        case CL_INVALID_WORK_ITEM_SIZE:
+            return "CL_INVALID_WORK_ITEM_SIZE";
+        case CL_INVALID_GLOBAL_OFFSET:
+            return "CL_INVALID_GLOBAL_OFFSET";
+        case CL_INVALID_EVENT_WAIT_LIST:
+            return "CL_INVALID_EVENT_WAIT_LIST";
+        case CL_INVALID_EVENT:
+            return "CL_INVALID_EVENT";
+        case CL_INVALID_OPERATION:
+            return "CL_INVALID_OPERATION";
+        case CL_INVALID_GL_OBJECT:
+            return "CL_INVALID_GL_OBJECT";
+        case CL_INVALID_BUFFER_SIZE:
+            return "CL_INVALID_BUFFER_SIZE";
+        case CL_INVALID_MIP_LEVEL:
+            return "CL_INVALID_MIP_LEVEL";
+        case CL_INVALID_GLOBAL_WORK_SIZE:
+            return "CL_INVALID_GLOBAL_WORK_SIZE";
+        case CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR:
+            return "CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR";
+        case CL_PLATFORM_NOT_FOUND_KHR:
+            return "CL_PLATFORM_NOT_FOUND_KHR";
+        case CL_DEVICE_PARTITION_FAILED_EXT:
+            return "CL_DEVICE_PARTITION_FAILED_EXT";
+        case CL_INVALID_PARTITION_COUNT_EXT:
+            return "CL_INVALID_PARTITION_COUNT_EXT";
+        default:
+            return "unknown error code";
+    }
+}
+
+Knapsack::Knapsack() {
+
+    for (int i = 0; i < 6; i++) {
         f[i] = 0;
     }
-    
-    for (int i = 0; i<3; i++){
-    cout << weight[i] << " " << value[i] << endl;
+
+    for (int i = 0; i < 3; i++){
+        cout << weight[i] << " " << value[i] << endl;
     }
     
+    global_work_items = (size_t *)malloc(sizeof(size_t));
+    local_work_items = (size_t *)malloc(sizeof(size_t));
+  
 }
 
 int main(int argc, char** argv) {
-
 
     Knapsack ksack;
     //1.Query the host system for OpenCL platform info

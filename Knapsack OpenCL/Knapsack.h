@@ -36,6 +36,9 @@ class Knapsack{
     cl_device_id *device_id;
     cl_uint num_devices;
     bool *device_avbility;
+    size_t *device_max_work_group_size;
+    size_t *local_work_items;
+    size_t *global_work_items; //dimension of the buffer
     cl_context context;
     cl_command_queue queue;
     cl_program program;
@@ -59,7 +62,9 @@ class Knapsack{
     void createProgramBuild();
     void createMemObjects();
     void createKernel();
+    size_t getLocalWorkItems(size_t globalWorkItems, size_t max_work_group_items);
     void createExecModelMemObjects();
+    string getErrorCode(int e);
     void cleanup();
     void CL_CALLBACK myCallBack(cl_event event, cl_int cmd_exec_status, void *user_data);
     void OpenCL_Context_Callback(const char *errinfo, const void *private_info, size_t cb, void *user_data);
