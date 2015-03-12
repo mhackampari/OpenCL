@@ -777,15 +777,37 @@ void Knapsack::createExecModelMemObjects() {
             NULL); //event object to return on completion
     if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
-    for (int i = 0; i < 6; i++) {
-        cout << f[i] << endl;
-    }
     
-    for (int i = 0; i < 15; i++) {
-        cout <<*(M+i)<< "; ";
-        if (i == 4 || i==9 )cout << endl;
-    }
 
+}
+
+void Knapsack::printResults() {
+    cout << "Evolution of the Knapsack worth F[x]: "; 
+    for (int i = 0; i < capacity+1; i++) {
+        cout << f[i] << " ";
+    }
+    cout << endl;
+    cout << "Matrix of decisions M[items][capacity]: " <<endl;
+    for (int i = 0; i < numelem*capacity; i++) {
+        cout <<*(M+i)<< "; ";
+        if ((i+1)%(capacity)==0 )cout << endl;
+    }
+    cout << "\nKnapsack's worth: " << f[capacity] << endl; 
+    cout << "Chosen items are:" << endl;
+    int cap = capacity - 1;
+    for (int item = numelem-1; item > -1; item--) {
+        for (int c = cap; c > -1; c--){
+            if(M[item + cap]!=0){
+                cout << "Value: " << value[item];
+                cout << "\tWeight: "<< weight[item]<<endl;
+                cap = cap - weight[item];
+                break;
+            }else if(M[item + cap]==0){
+                c = 0;
+            }
+        }
+        
+    }
 }
 
 size_t Knapsack::getLocalWorkItems(size_t globalThreads, size_t maxWorkItemSize) {
@@ -994,6 +1016,8 @@ int main(int argc, char** argv) {
     //9. Submit the kernels to the command queue for execution.
     //10. Copy the results from the device to the host
     ksack.createExecModelMemObjects();
+    
+    ksack.printResults();
 
     ksack.cleanup();
 

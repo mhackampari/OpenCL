@@ -49,12 +49,10 @@ class Knapsack{
     
     //int M[3][5];
     int *M;
-    //int M[15];
     int *value;
     int *weight;
     int sumWeight;
     int capacity;
-    //int f[6];
     int *f;
     int numelem;
     
@@ -69,6 +67,7 @@ class Knapsack{
     void createKernel();
     size_t getLocalWorkItems(size_t globalWorkItems, size_t max_work_group_items);
     void createExecModelMemObjects();
+    void printResults();
     string getErrorCode(int e);
     void cleanup();
     void CL_CALLBACK myCallBack(cl_event event, cl_int cmd_exec_status, void *user_data);
