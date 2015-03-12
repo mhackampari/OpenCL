@@ -566,7 +566,7 @@ void Knapsack::createMemObjects() {
     value_mem = clCreateBuffer(
             context, // a valid context
             CL_MEM_READ_ONLY, // bit-field flag to specify;  the usage of memory
-            sizeof (value), // size in bytes of the buffer to allocated
+            sizeof(int)*numelem, // size in bytes of the buffer to allocated
             NULL, // pointer to buffer data to be copied from host
             &err // returned error code
             );
@@ -575,7 +575,7 @@ void Knapsack::createMemObjects() {
     weight_mem = clCreateBuffer(
             context, // a valid context
             CL_MEM_READ_ONLY, // bit-field flag to specify;  the usage of memory
-            sizeof (weight), // size in bytes of the buffer to allocated
+            sizeof(int)*numelem, // size in bytes of the buffer to allocated
             NULL, // pointer to buffer data to be copied from host
             &err // returned error code
             );
@@ -584,7 +584,7 @@ void Knapsack::createMemObjects() {
     M_mem = clCreateBuffer(
             context, // a valid context
             CL_MEM_READ_WRITE, // bit-field flag to specify
-            sizeof(M), // size in bytes of the buffer to allocated
+            sizeof(int)*numelem*capacity, // size in bytes of the buffer to allocated
             NULL, // pointer to buffer data to be copied from host
             &err // returned error code
             );
@@ -593,7 +593,7 @@ void Knapsack::createMemObjects() {
     f_mem = clCreateBuffer(
             context, // a valid context
             CL_MEM_READ_WRITE, // bit-field flag to specify
-            sizeof(f), // size in bytes of the buffer to allocated
+            sizeof(int)*(capacity+1), // size in bytes of the buffer to allocated
             NULL, // pointer to buffer data to be copied from host
             &err // returned error code
             );
@@ -607,7 +607,7 @@ void Knapsack::createMemObjects() {
             value_mem, //memory buffer object to write to
             CL_TRUE, // indicate blocking write
             0, //the offset in the buffer object to write to
-            sizeof (value), //size in bytes of data to write to
+            sizeof(int)*numelem, //size in bytes of data to write to
             value, //pointer to buffer in host mem to read data from
             0, //number of events in the event list 
             NULL, //list of events that needs to complete before this executes
@@ -619,7 +619,7 @@ void Knapsack::createMemObjects() {
             weight_mem, //memory buffer object to write to
             CL_TRUE, // indicate blocking write
             0, //the offset in the buffer object to write to
-            sizeof (weight), //size in bytes of data to write to
+            sizeof(int)*numelem, //size in bytes of data to write to
             weight, //pointer to buffer in host mem to read data from
             0, //number of events in the event list 
             NULL, //list of events that needs to complete before this executes
@@ -631,7 +631,7 @@ void Knapsack::createMemObjects() {
             M_mem, //memory buffer object to write to
             CL_TRUE, // indicate blocking write
             0, //the offset in the buffer object to write to
-            sizeof (M), //size in bytes of data to write to
+            sizeof(int)*numelem*capacity, //size in bytes of data to write to
             M, //pointer to buffer in host mem to read data from
             0, //number of events in the event list 
             NULL, //list of events that needs to complete before this executes
@@ -645,7 +645,7 @@ void Knapsack::createKernel() {
      * __kernel function along with the arguments that are associated with the 
      * __kernel function when executed. The kernel object is eventually sent to 
      * the command queue for execution.*/
-    char *kernelName = NULL;
+    
     kernel = clCreateKernel(
             program, // a valid program object that has been successfully built
             "knapsack", // the name of the kernel declared with __kernel
@@ -656,7 +656,7 @@ void Knapsack::createKernel() {
     err = clSetKernelArg(
             kernel, //valid kernel object
             0, //the specific argument of a kernel
-            sizeof (int), //the size of the argument data
+            sizeof(int), //the size of the argument data
             &capacity //a pointer of data used as the argument
             );
     if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
@@ -664,7 +664,7 @@ void Knapsack::createKernel() {
     err = clSetKernelArg(
             kernel, //valid kernel object
             1, //the specific argument of a kernel
-            sizeof (int), //the size of the argument data
+            sizeof(int), //the size of the argument data
             &sumWeight //a pointer of data used as the argument
             );
     if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
@@ -672,7 +672,7 @@ void Knapsack::createKernel() {
     err = clSetKernelArg(
             kernel, //valid kernel object
             2, //the specific argument of a kernel
-            sizeof (cl_mem), //the size of the argument data
+            sizeof(cl_mem), //the size of the argument data
             &value_mem //a pointer of data used as the argument
             );
     if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
@@ -680,7 +680,7 @@ void Knapsack::createKernel() {
     err = clSetKernelArg(
             kernel, //valid kernel object
             3, //the specific argument of a kernel
-            sizeof (cl_mem), //the size of the argument data
+            sizeof(cl_mem), //the size of the argument data
             &weight_mem //a pointer of data used as the argument
             );
     if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
@@ -688,7 +688,7 @@ void Knapsack::createKernel() {
     err = clSetKernelArg(
             kernel, //valid kernel object
             4, //the specific argument of a kernel
-            sizeof (cl_mem), //the size of the argument data
+            sizeof(cl_mem), //the size of the argument data
             &M_mem //a pointer of data used as the argument
             );
     if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
@@ -696,7 +696,7 @@ void Knapsack::createKernel() {
     err = clSetKernelArg(
             kernel, //valid kernel object
             5, //the specific argument of a kernel
-            sizeof (cl_mem), //the size of the argument data
+            sizeof(cl_mem), //the size of the argument data
             &f_mem //a pointer of data used as the argument
             );
     if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
@@ -710,10 +710,9 @@ void Knapsack::createKernel() {
     err = clGetKernelWorkGroupInfo(kernel,
             device_id[0],
             CL_KERNEL_WORK_GROUP_SIZE,
-            sizeof (size_t),
+            sizeof(size_t),
             &size,
             NULL);
-
     if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     cout << "\nCL_KERNEL_WORK_GROUP_SIZE: " << size << endl;
 
@@ -733,13 +732,12 @@ void Knapsack::createExecModelMemObjects() {
      * must be used to query the group size info of a device.
      */
 
-    *global_work_items = (size_t)sizeof (value) / sizeof (int);
+    *global_work_items = (size_t)numelem;
     *local_work_items = getLocalWorkItems(*global_work_items, *device_max_work_group_size);
 
     err = clEnqueueNDRangeKernel(
             queue, // valid command queue
-            kernel,
-            // valid kernel object
+            kernel, // valid kernel object
             1, // the work problem dimensions
             NULL, //must be NULL
             global_work_items, // work-items for each dimension
@@ -760,7 +758,7 @@ void Knapsack::createExecModelMemObjects() {
             f_mem, //memory buffer object to write to
             CL_TRUE, // indicate blocking write
             0, //the offset in the buffer object to write to
-            sizeof (f), //size in bytes of data to write to
+            sizeof(int)*(capacity+1), //size in bytes of data to write to
             f, //pointer to buffer in host mem to read data from
             0, //number of events in the event list 
             NULL, //list of events that needs to complete before this executes
@@ -772,7 +770,7 @@ void Knapsack::createExecModelMemObjects() {
             M_mem, //memory buffer object to write to
             CL_TRUE, // indicate blocking write
             0, //the offset in the buffer object to write to
-            sizeof(M), //size in bytes of data to write to
+            sizeof(int)*capacity*numelem, //size in bytes of data to write to
             M, //pointer to buffer in host mem to read data from
             0, //number of events in the event list 
             NULL, //list of events that needs to complete before this executes
@@ -784,7 +782,7 @@ void Knapsack::createExecModelMemObjects() {
     }
     
     for (int i = 0; i < 15; i++) {
-        cout <<*(*M+i)<< "; ";
+        cout <<*(M+i)<< "; ";
         if (i == 4 || i==9 )cout << endl;
     }
 
@@ -944,31 +942,35 @@ string Knapsack::getErrorCode(int e) {
     }
 }
 
-Knapsack::Knapsack() :
-M{0},
-value{1, 3, 2},
-weight{2, 3, 2},
-f{0},
-capacity(5),
-sumWeight(7){
-
-    for (int i = 0; i < 6; i++) {
-        f[i] = 0;
-    }
-
-    for (int i = 0; i < 3; i++) {
-        cout << weight[i] << " " << value[i] << endl;
-        cout << **(M+i) << " VS "<<*(*M+i)<<" VS "<<*M+i<<" VS "<<*(M+i) <<" VS " << M[i]<<" VS "<<&M[0][i] << endl;
-    }
+Knapsack::Knapsack() 
+{
+    int vtemp[] = {1, 3, 2, 4};
+    int wtemp[] = {2, 3, 2, 2};
+    capacity = 5;
+    numelem = sizeof(vtemp)/sizeof(int);
     
-    //
-    for (int i = 0; i < 15; i++) {
-        cout << "M: "<<*(*M+i);
-        cout << " Add: "<<(*M+i) << endl;
-    }
-
+    value = (int *)malloc(sizeof(int)*numelem);
+    weight = (int *)malloc(sizeof(int)*numelem);
+    f = (int *)malloc(sizeof(int)*(capacity+1)); //f[capacity +1]
+    M = (int *)malloc(sizeof(int)*numelem*capacity); //M[numelem][capacity]
     global_work_items = (size_t *) malloc(sizeof (size_t));
     local_work_items = (size_t *) malloc(sizeof (size_t));
+    
+    memcpy(value, vtemp, sizeof(int)*numelem);
+    memcpy(weight, wtemp, sizeof(int)*numelem);
+    sumWeight = 0;
+    
+    for(int i=0; i<numelem; i++){
+        sumWeight += weight[i];
+    }
+    
+    for (int i = 0; i < capacity+1; i++) {
+        *(f+i) = 0; //f[i] = 0;
+    }
+    
+    for (int i = 0; i < numelem*capacity; i++) {
+        *(M+i) = 0; //M[i]=0;
+    }
 
 }
 

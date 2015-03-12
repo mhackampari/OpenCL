@@ -17,6 +17,7 @@
 #include<CL/cl.h>
 #include<iostream>
 #include <fstream>
+#include "SDKUtil//CLUtil.hpp"
 
 using namespace std;
 
@@ -46,12 +47,16 @@ class Knapsack{
     cl_kernel kernel;
     ifstream ofs;
     
-    int M[3][5];
-    int value[3] ;
-    int weight[3];
+    //int M[3][5];
+    int *M;
+    //int M[15];
+    int *value;
+    int *weight;
     int sumWeight;
     int capacity;
-    int f[6];
+    //int f[6];
+    int *f;
+    int numelem;
     
     //initialize variables
     public:Knapsack();
