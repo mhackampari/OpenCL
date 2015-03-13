@@ -25,7 +25,7 @@ class Knapsack{
     //variables
     
     const cl_platform_info platform_const_value[5] = {CL_PLATFORM_PROFILE, CL_PLATFORM_VERSION, CL_PLATFORM_NAME, CL_PLATFORM_VENDOR, CL_PLATFORM_EXTENSIONS};
-    const std::string platform_const_string[5] = {"CL_PLATFORM_PROFILE", "CL_PLATFORM_VERSION", "CL_PLATFORM_NAME", "CL_PLATFORM_VENDOR", "CL_PLATFORM_EXTENSIONS"};
+    const string platform_const_string[5] = {"CL_PLATFORM_PROFILE", "CL_PLATFORM_VERSION", "CL_PLATFORM_NAME", "CL_PLATFORM_VENDOR", "CL_PLATFORM_EXTENSIONS"};
     
     cl_platform_id *platforms;
     cl_uint num_platforms;
@@ -61,10 +61,12 @@ class Knapsack{
 
     void queryOclPlatformInfo();
     void queryOclDevice();
-    void createContextQueue();
-    void createProgramBuild();
+public: int getNumDevices(); 
+    void queryOclDeviceInfo(int i);
+    void createContextQueue(int i);
+    void createProgramBuild(int i);
     void createMemObjects();
-    void createKernel();
+    void createKernel(int i);
     size_t getLocalWorkItems(size_t globalWorkItems, size_t max_work_group_items);
     void createExecModelMemObjects();
     void printResults();
