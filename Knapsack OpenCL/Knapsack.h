@@ -17,7 +17,7 @@
 #include<CL/cl.h>
 #include<iostream>
 #include <fstream>
-#include "SDKUtil//CLUtil.hpp"
+#include "SDKUtil/CLUtil.hpp"
 
 using namespace std;
 
