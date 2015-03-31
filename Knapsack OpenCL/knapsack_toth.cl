@@ -1,18 +1,14 @@
-
-void kernel knapsack(int capacity, int sumW, global int *value, global int *weight,  global int* M, global int *f){
-    size_t gid = get_global_id(0);
-    int cmax = 0;
+void kernel knapsack(global int *input_f, global int *output_f, global int *m_d,  int cmax, int weightk, int pk){
     
-    sumW = sumW - weight[gid];
-    
-    if(capacity - sumW > weight[gid])
-        cmax = capacity - sumW;
-        else cmax = weight[gid];
+    int c = get_global_id(0)+cmax;
         
-    for(int c = capacity; c > cmax-1; c--){
-        if(f[c] < f[c - weight[gid]] + value[gid]){
-            f[c] = f[c - weight[gid]] + value[gid];
-            M[c-1+capacity*gid] = 1;
-        }
-    }
+    
+    if(input_f[c] < input_f[c - weightk] + pk){
+        output_f[c] = input_f[c - weightk] + pk;
+        m_d[c-1] = 1;
+    } 
+    else{
+    output_f[c] = input_f[c];
+    /*m_d[c-1] = 1;*/
+    }   
 }

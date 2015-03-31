@@ -42,19 +42,19 @@ class Knapsack{
     cl_context context;
     cl_command_queue queue;
     cl_program program;
-    cl_mem value_mem, weight_mem;
-    cl_mem f_mem, M_mem;
+    cl_mem f1_mem, f0_mem;
+    cl_mem m_d_mem;
     cl_kernel kernel;
     ifstream ofs;
     
     //int M[3][5];
-    int *M;
+    int *M, *m_d;
     int *value;
     int *weight;
     int sumWeight;
     int capacity;
-    int *f;
-    int numelem;
+    int *f1, *f0, *F;
+    int numelem, cmax;
     
     //initialize variables
     public:Knapsack();
@@ -66,12 +66,15 @@ public: int getNumDevices();
     void createContextQueue(int i);
     void createProgramBuild(int i);
     void createMemObjects();
-    void createKernel(int i);
+    void createKernel(cl_mem f_input, cl_mem f_output, int weightk, int valuek, int i);
     size_t getLocalWorkItems(size_t globalWorkItems, size_t max_work_group_items);
-    void createExecModelMemObjects();
+    void executeMemObjects(cl_mem f_input, int *f);
+    void executeComputation(int i);
     void printResults();
     string getErrorCode(int e);
     void cleanup();
+    void pari(int w, int v, int i);
+    void dispari(int w, int v, int i);
     void CL_CALLBACK myCallBack(cl_event event, cl_int cmd_exec_status, void *user_data);
     void OpenCL_Context_Callback(const char *errinfo, const void *private_info, size_t cb, void *user_data);
     

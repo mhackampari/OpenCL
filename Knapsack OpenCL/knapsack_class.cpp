@@ -515,7 +515,7 @@ void Knapsack::createProgramBuild(int i) {
     string sourceKernel, line;
 
 
-    ofs.open("..\\OpenCL\\Knapsack OpenCL\\knapsack_toth.cl", ios_base::in);
+    ofs.open("..\\knapsack_toth.cl", ios_base::in);
     if (ofs.is_open()) {
         while (ofs.good()) {
             getline(ofs, line);
@@ -529,10 +529,10 @@ void Knapsack::createProgramBuild(int i) {
 
     char *x = (char *) malloc(sizeof (char)*(sourceKernel.length() + 1));
     strcpy(x, sourceKernel.c_str());
-    
+
     cout << "\nKERNEL OUTPUT: \n";
     cout << string(x);
-    cout <<endl;
+    cout << endl;
 
 
     program = clCreateProgramWithSource(
@@ -583,34 +583,16 @@ void Knapsack::createMemObjects() {
      */
 
     //http://stackoverflow.com/questions/3832963/two-ways-to-create-a-buffer-object-in-opencl-clcreatebuffer-vs-clcreatebuffer
-    value_mem = clCreateBuffer(
+    f0_mem = clCreateBuffer(
             context, // a valid context
-            CL_MEM_READ_ONLY, // bit-field flag to specify;  the usage of memory
-            sizeof (int)*numelem, // size in bytes of the buffer to allocated
+            CL_MEM_READ_WRITE, // bit-field flag to specify;  the usage of memory
+            sizeof (int)*(capacity + 1), // size in bytes of the buffer to allocated
             NULL, // pointer to buffer data to be copied from host
             &err // returned error code
             );
     if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
-    weight_mem = clCreateBuffer(
-            context, // a valid context
-            CL_MEM_READ_ONLY, // bit-field flag to specify;  the usage of memory
-            sizeof (int)*numelem, // size in bytes of the buffer to allocated
-            NULL, // pointer to buffer data to be copied from host
-            &err // returned error code
-            );
-    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-
-    M_mem = clCreateBuffer(
-            context, // a valid context
-            CL_MEM_READ_WRITE, // bit-field flag to specify
-            sizeof (int)*numelem*capacity, // size in bytes of the buffer to allocated
-            NULL, // pointer to buffer data to be copied from host
-            &err // returned error code
-            );
-    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-
-    f_mem = clCreateBuffer(
+    f1_mem = clCreateBuffer(
             context, // a valid context
             CL_MEM_READ_WRITE, // bit-field flag to specify
             sizeof (int)*(capacity + 1), // size in bytes of the buffer to allocated
@@ -619,16 +601,26 @@ void Knapsack::createMemObjects() {
             );
     if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
+    m_d_mem = clCreateBuffer(
+            context, // a valid context
+            CL_MEM_READ_WRITE, // bit-field flag to specify
+            sizeof (int)*capacity, // size in bytes of the buffer to allocated
+            NULL, // pointer to buffer data to be copied from host
+            &err // returned error code
+            );
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
     /*Enqueues a command to write data from host to memory to a buffer object.
      *This functional is typically used to provide data for the kernel processing. 
      */
+
     err = clEnqueueWriteBuffer(
             queue, //valid command queue 
-            value_mem, //memory buffer object to write to
+            f0_mem, //memory buffer object to write to
             CL_TRUE, // indicate blocking write
             0, //the offset in the buffer object to write to
-            sizeof (int)*numelem, //size in bytes of data to write to
-            value, //pointer to buffer in host mem to read data from
+            sizeof (int)*(capacity + 1), //size in bytes of data to write to
+            f0, //pointer to buffer in host mem to read data from
             0, //number of events in the event list 
             NULL, //list of events that needs to complete before this executes
             NULL); //event object to return on completion
@@ -636,11 +628,11 @@ void Knapsack::createMemObjects() {
 
     err = clEnqueueWriteBuffer(
             queue, //valid command queue 
-            weight_mem, //memory buffer object to write to
+            f1_mem, //memory buffer object to write to
             CL_TRUE, // indicate blocking write
             0, //the offset in the buffer object to write to
-            sizeof (int)*numelem, //size in bytes of data to write to
-            weight, //pointer to buffer in host mem to read data from
+            sizeof (int)*(capacity + 1), //size in bytes of data to write to
+            f1, //pointer to buffer in host mem to read data from
             0, //number of events in the event list 
             NULL, //list of events that needs to complete before this executes
             NULL); //event object to return on completion
@@ -648,18 +640,18 @@ void Knapsack::createMemObjects() {
 
     err = clEnqueueWriteBuffer(
             queue, //valid command queue 
-            M_mem, //memory buffer object to write to
+            m_d_mem, //memory buffer object to write to
             CL_TRUE, // indicate blocking write
             0, //the offset in the buffer object to write to
-            sizeof (int)*numelem*capacity, //size in bytes of data to write to
-            M, //pointer to buffer in host mem to read data from
+            sizeof (int)*capacity, //size in bytes of data to write to
+            m_d, //pointer to buffer in host mem to read data from
             0, //number of events in the event list 
             NULL, //list of events that needs to complete before this executes
             NULL); //event object to return on completion
     if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 }
 
-void Knapsack::createKernel(int i) {
+void Knapsack::createKernel(cl_mem f_input, cl_mem f_output, int weightk, int valuek, int i) {
 
     /*A kernel object is an encapsulation of the specify
      * __kernel function along with the arguments that are associated with the 
@@ -676,16 +668,16 @@ void Knapsack::createKernel(int i) {
     err = clSetKernelArg(
             kernel, //valid kernel object
             0, //the specific argument of a kernel
-            sizeof (int), //the size of the argument data
-            &capacity //a pointer of data used as the argument
+            sizeof (cl_mem), //the size of the argument data
+            &f_input //a pointer of data used as the argument
             );
     if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
     err = clSetKernelArg(
             kernel, //valid kernel object
             1, //the specific argument of a kernel
-            sizeof (int), //the size of the argument data
-            &sumWeight //a pointer of data used as the argument
+            sizeof (cl_mem), //the size of the argument data
+            &f_output//a pointer of data used as the argument
             );
     if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
@@ -693,31 +685,31 @@ void Knapsack::createKernel(int i) {
             kernel, //valid kernel object
             2, //the specific argument of a kernel
             sizeof (cl_mem), //the size of the argument data
-            &value_mem //a pointer of data used as the argument
+            &m_d_mem //a pointer of data used as the argument
             );
     if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
     err = clSetKernelArg(
             kernel, //valid kernel object
             3, //the specific argument of a kernel
-            sizeof (cl_mem), //the size of the argument data
-            &weight_mem //a pointer of data used as the argument
+            sizeof (int), //the size of the argument data
+            &cmax //a pointer of data used as the argument
             );
     if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
     err = clSetKernelArg(
             kernel, //valid kernel object
             4, //the specific argument of a kernel
-            sizeof (cl_mem), //the size of the argument data
-            &M_mem //a pointer of data used as the argument
+            sizeof (int), //the size of the argument data
+            &weightk //a pointer of data used as the argument
             );
     if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
     err = clSetKernelArg(
             kernel, //valid kernel object
             5, //the specific argument of a kernel
-            sizeof (cl_mem), //the size of the argument data
-            &f_mem //a pointer of data used as the argument
+            sizeof (int), //the size of the argument data
+            &valuek //a pointer of data used as the argument
             );
     if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
@@ -738,7 +730,7 @@ void Knapsack::createKernel(int i) {
 
 }
 
-void Knapsack::createExecModelMemObjects() {
+void Knapsack::executeMemObjects(cl_mem f_output_mem, int *f) {
     /*
      * Enqueues a command to execute a kernel on a device.
      * 
@@ -752,10 +744,7 @@ void Knapsack::createExecModelMemObjects() {
      * must be used to query the group size info of a device.
      */
 
-    *global_work_items = (size_t) numelem;
-    *local_work_items = getLocalWorkItems(*global_work_items, *device_max_work_group_size);
-    cout << "global_work_items: " << *global_work_items << endl;
-    cout << "local_work_items: " << *local_work_items << endl;
+
 
     err = clEnqueueNDRangeKernel(
             queue, // valid command queue
@@ -775,9 +764,11 @@ void Knapsack::createExecModelMemObjects() {
      * back to host program. 
      * Reads the cl memory "output_mem" on device to the host variable "f".
      */
+
+
     err = clEnqueueReadBuffer(
             queue, //valid command queue 
-            f_mem, //memory buffer object to write to
+            f_output_mem, //memory buffer object to write to
             CL_TRUE, // indicate blocking write
             0, //the offset in the buffer object to write to
             sizeof (int)*(capacity + 1), //size in bytes of data to write to
@@ -789,15 +780,21 @@ void Knapsack::createExecModelMemObjects() {
 
     err = clEnqueueReadBuffer(
             queue, //valid command queue 
-            M_mem, //memory buffer object to write to
+            m_d_mem, //memory buffer object to write to
             CL_TRUE, // indicate blocking write
             0, //the offset in the buffer object to write to
-            sizeof (int)*capacity*numelem, //size in bytes of data to write to
-            M, //pointer to buffer in host mem to read data from
+            sizeof (int)*numelem, //size in bytes of data to write to
+            m_d, //pointer to buffer in host mem to read data from
             0, //number of events in the event list 
             NULL, //list of events that needs to complete before this executes
             NULL); //event object to return on completion
     if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
+    cout << "m_d after buffer enqueue: " << endl;
+    for (int i = 0; i < capacity; i++)
+        cout << m_d[i];
+
+    cout << endl;
 
 
 
@@ -808,7 +805,12 @@ void Knapsack::printResults() {
     cout << "*************************************************" << endl;
     cout << "Evolution of the Knapsack worth F[x]: ";
     for (int i = 0; i < capacity + 1; i++) {
-        cout << f[i] << " ";
+        if (numelem % 2 == 0) {
+            cout << f0[i] << " ";
+        } else {
+            cout << *(f1 + i) << " ";
+        }
+
     }
     cout << endl;
     cout << "Matrix of decisions M[items][capacity]: " << endl;
@@ -816,7 +818,13 @@ void Knapsack::printResults() {
         cout << *(M + i) << "; ";
         if ((i + 1) % (capacity) == 0)cout << endl;
     }
-    cout << "\nKnapsack's worth: " << f[capacity] << endl;
+    cout << "\nKnapsack's worth: ";
+    if (numelem % 2 == 0) {
+        cout << f0[capacity] << endl;
+    } else {
+        cout << f1[capacity] << endl;
+    }
+
     cout << "Chosen items are:" << endl;
     int cap = capacity;
     for (int item = numelem - 1; item > -1; item--) {
@@ -833,7 +841,7 @@ void Knapsack::printResults() {
 
     }
     cout << "*************************************************" << endl;
-    cout << "END OF THE PRINTOUT" <<endl;
+    cout << "END OF THE PRINTOUT" << endl;
 }
 
 size_t Knapsack::getLocalWorkItems(size_t globalThreads, size_t maxWorkItemSize) {
@@ -862,11 +870,10 @@ void Knapsack::cleanup() {
     if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     err = clReleaseProgram(program);
     if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    err = clReleaseMemObject(value_mem);
+
+    err = clReleaseMemObject(f0_mem);
     if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    err = clReleaseMemObject(weight_mem);
-    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    err = clReleaseMemObject(f_mem);
+    err = clReleaseMemObject(f1_mem);
     if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     err = clReleaseCommandQueue(queue);
     if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
@@ -998,8 +1005,10 @@ Knapsack::Knapsack() {
 
     value = (int *) malloc(sizeof (int)*numelem);
     weight = (int *) malloc(sizeof (int)*numelem);
-    f = (int *) malloc(sizeof (int)*(capacity + 1)); //f[capacity +1]
+    f1 = (int *) malloc(sizeof (int)*(capacity + 1)); //f[capacity +1]
+    f0 = (int *) malloc(sizeof (int)*(capacity + 1)); //f[0, ..., capacity]
     M = (int *) malloc(sizeof (int)*numelem * capacity); //M[numelem][capacity]
+    m_d = (int *) malloc(sizeof (int)*(capacity)); //m_d[1, ..., capacity] this a row of M matrix
     global_work_items = (size_t *) malloc(sizeof (size_t));
     local_work_items = (size_t *) malloc(sizeof (size_t));
 
@@ -1012,15 +1021,506 @@ Knapsack::Knapsack() {
     }
 
     for (int i = 0; i < capacity + 1; i++) {
-        *(f + i) = 0; //f[i] = 0;
+        *(f1 + i) = 0; //f[i] = 0;
+        *(f0 + i) = 0;
     }
 
     for (int i = 0; i < numelem * capacity; i++) {
         *(M + i) = 0; //M[i]=0;
+
+        if (i < capacity) {
+            *(m_d + i) = 0;
+        }
+    }
+
+    int x1[capacity + 1] = {0};
+    int x0[capacity + 1] = {0};
+    int m1[capacity] = {0};
+    memcpy(f1, x1, sizeof (int)*(capacity + 1));
+    memcpy(f0, x0, sizeof (int)*(capacity + 1));
+    memcpy(m_d, m1, sizeof (int)*(capacity));
+
+}
+
+void Knapsack::executeComputation(int i) {
+
+    for (int k = 0; k < numelem; k++) {
+
+        int sumK = sumWeight - weight[k];
+        cmax = 0;
+        cmax = max(capacity - sumK, weight[k]);
+
+        *global_work_items = (size_t) (capacity - cmax + 1);
+        *local_work_items = getLocalWorkItems(*global_work_items, *device_max_work_group_size);
+        cout << "global_work_items: " << *global_work_items << endl;
+        cout << "local_work_items: " << *local_work_items << endl;
+
+        for (int i = 0; i < capacity; i++)
+            cout << *(m_d + i);
+        cout << endl;
+
+        if (k % 2 == 0) {
+            //createKernel(f0_mem, f1_mem, weight[k], value[k], i);
+            //executeMemObjects(f1_mem, f1);
+            pari(weight[k], value[k], i);
+        } else {
+            //createKernel(f1_mem, f0_mem, weight[k], value[k], i);
+            //executeMemObjects(f0_mem, f0);
+            dispari(weight[k], value[k], i);
+        }
+        memmove(M + k*capacity, m_d, sizeof (int)*capacity);
+        cout << k << ": ";
+        for (int i = 0; i < capacity; i++) {
+            cout << *(m_d + i);
+            *(m_d + i) = 0;
+        }
+        cout << endl;
+
+
+
     }
 
 }
 
-int Knapsack::getNumDevices(){
-    return (int)num_devices;
+void Knapsack::pari(int weightk, int valuek, int i) {
+
+    f0_mem = clCreateBuffer(
+            context, // a valid context
+            CL_MEM_READ_WRITE, // bit-field flag to specify;  the usage of memory
+            sizeof (int)*(capacity + 1), // size in bytes of the buffer to allocated
+            NULL, // pointer to buffer data to be copied from host
+            &err // returned error code
+            );
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
+    f1_mem = clCreateBuffer(
+            context, // a valid context
+            CL_MEM_READ_WRITE, // bit-field flag to specify
+            sizeof (int)*(capacity + 1), // size in bytes of the buffer to allocated
+            NULL, // pointer to buffer data to be copied from host
+            &err // returned error code
+            );
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
+    m_d_mem = clCreateBuffer(
+            context, // a valid context
+            CL_MEM_READ_WRITE, // bit-field flag to specify
+            sizeof (int)*capacity, // size in bytes of the buffer to allocated
+            NULL, // pointer to buffer data to be copied from host
+            &err // returned error code
+            );
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
+    /*Enqueues a command to write data from host to memory to a buffer object.
+     *This functional is typically used to provide data for the kernel processing. 
+     */
+
+    err = clEnqueueWriteBuffer(
+            queue, //valid command queue 
+            f0_mem, //memory buffer object to write to
+            CL_TRUE, // indicate blocking write
+            0, //the offset in the buffer object to write to
+            sizeof (int)*(capacity + 1), //size in bytes of data to write to
+            f0, //pointer to buffer in host mem to read data from
+            0, //number of events in the event list 
+            NULL, //list of events that needs to complete before this executes
+            NULL); //event object to return on completion
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
+    err = clEnqueueWriteBuffer(
+            queue, //valid command queue 
+            f1_mem, //memory buffer object to write to
+            CL_TRUE, // indicate blocking write
+            0, //the offset in the buffer object to write to
+            sizeof (int)*(capacity + 1), //size in bytes of data to write to
+            f1, //pointer to buffer in host mem to read data from
+            0, //number of events in the event list 
+            NULL, //list of events that needs to complete before this executes
+            NULL); //event object to return on completion
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
+    err = clEnqueueWriteBuffer(
+            queue, //valid command queue 
+            m_d_mem, //memory buffer object to write to
+            CL_TRUE, // indicate blocking write
+            0, //the offset in the buffer object to write to
+            sizeof (int)*capacity, //size in bytes of data to write to
+            m_d, //pointer to buffer in host mem to read data from
+            0, //number of events in the event list 
+            NULL, //list of events that needs to complete before this executes
+            NULL); //event object to return on completion
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
+
+
+
+    /*A kernel object is an encapsulation of the specify
+     * __kernel function along with the arguments that are associated with the 
+     * __kernel function when executed. The kernel object is eventually sent to 
+     * the command queue for execution.*/
+
+    kernel = clCreateKernel(
+            program, // a valid program object that has been successfully built
+            "knapsack", // the name of the kernel declared with __kernel
+            &err // error return code
+            );
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
+    err = clSetKernelArg(
+            kernel, //valid kernel object
+            0, //the specific argument of a kernel
+            sizeof (cl_mem), //the size of the argument data
+            &f0_mem //a pointer of data used as the argument
+            );
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
+    err = clSetKernelArg(
+            kernel, //valid kernel object
+            1, //the specific argument of a kernel
+            sizeof (cl_mem), //the size of the argument data
+            &f1_mem//a pointer of data used as the argument
+            );
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
+    err = clSetKernelArg(
+            kernel, //valid kernel object
+            2, //the specific argument of a kernel
+            sizeof (cl_mem), //the size of the argument data
+            &m_d_mem //a pointer of data used as the argument
+            );
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
+    err = clSetKernelArg(
+            kernel, //valid kernel object
+            3, //the specific argument of a kernel
+            sizeof (int), //the size of the argument data
+            &cmax //a pointer of data used as the argument
+            );
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
+    err = clSetKernelArg(
+            kernel, //valid kernel object
+            4, //the specific argument of a kernel
+            sizeof (int), //the size of the argument data
+            &weightk //a pointer of data used as the argument
+            );
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
+    err = clSetKernelArg(
+            kernel, //valid kernel object
+            5, //the specific argument of a kernel
+            sizeof (int), //the size of the argument data
+            &valuek //a pointer of data used as the argument
+            );
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
+    /*each kernel execution in OpenCL is called a work-item. 
+     * OpenCL exploits parallel computation of the compute devices by having 
+     * instances of the kernel execute on different portions of the 
+     * N-dimensional problem space. In addition, each work-item is executed 
+     * only with its assigned data. Thus, it is important specify to OpenCL 
+     * how many work-items are needed to process all data.*/
+    err = clGetKernelWorkGroupInfo(kernel,
+            device_id[i],
+            CL_KERNEL_WORK_GROUP_SIZE,
+            sizeof (size_t),
+            &size,
+            NULL);
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+    cout << "\nCL_KERNEL_WORK_GROUP_SIZE: " << size << endl;
+
+
+
+
+    /*
+     * Enqueues a command to execute a kernel on a device.
+     * 
+     * OpenCL allows work-items to be combined into work-groups, and all work-items
+     * within a work-group are executed on the same compute unit on the same device.
+     * When a work-group size is specified, OpenCL divides the global work size among 
+     * the compute units on the device. In addition, work-items within a work-group
+     * execute synchronously and are able to share memory. The total number of
+     * work-items  in a work-group is known as the local work size. Group seizes
+     * cannot be assigned arbitrarily; the provided OpenCL function clGetKernelWorkGroupInfo()
+     * must be used to query the group size info of a device.
+     */
+
+
+
+    err = clEnqueueNDRangeKernel(
+            queue, // valid command queue
+            kernel, // valid kernel object
+            1, // the work problem dimensions
+            NULL, //must be NULL
+            global_work_items, // work-items for each dimension
+            local_work_items, // work-group size for each dimension
+            0, // number of event in the event list
+            NULL, // list of events that needs to complete before this executes
+            NULL // event object to return on completion
+            );
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
+    /* Enqueues a command to read data from a buffer object into host memory.
+     * This function is typically used to READ RESULTS FROM the KERNEL execution
+     * back to host program. 
+     * Reads the cl memory "output_mem" on device to the host variable "f".
+     */
+    err = clEnqueueReadBuffer(
+            queue, //valid command queue 
+            m_d_mem, //memory buffer object to write to
+            CL_TRUE, // indicate blocking write
+            0, //the offset in the buffer object to write to
+            sizeof (int)*capacity, //size in bytes of data to write to
+            m_d, //pointer to buffer in host mem to read data from
+            0, //number of events in the event list 
+            NULL, //list of events that needs to complete before this executes
+            NULL); //event object to return on completion
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
+    err = clEnqueueReadBuffer(
+            queue, //valid command queue 
+            f1_mem, //memory buffer object to write to
+            CL_TRUE, // indicate blocking write
+            0, //the offset in the buffer object to write to
+            sizeof (int)*(capacity + 1), //size in bytes of data to write to
+            f1, //pointer to buffer in host mem to read data from
+            0, //number of events in the event list 
+            NULL, //list of events that needs to complete before this executes
+            NULL); //event object to return on completion
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
+    cout << "f1 after buffer enqueue: " << endl;
+    for (int i = 0; i < capacity + 1; i++)
+        cout << f1[i];
+    cout << endl;
+    cout << "m_d after buffer enqueue: " << endl;
+    for (int i = 0; i < capacity; i++)
+        cout << m_d[i];
+
+    cout << endl;
+}
+
+void Knapsack::dispari(int weightk, int valuek, int i) {
+
+
+    f0_mem = clCreateBuffer(
+            context, // a valid context
+            CL_MEM_READ_WRITE, // bit-field flag to specify;  the usage of memory
+            sizeof (int)*(capacity + 1), // size in bytes of the buffer to allocated
+            NULL, // pointer to buffer data to be copied from host
+            &err // returned error code
+            );
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
+    f1_mem = clCreateBuffer(
+            context, // a valid context
+            CL_MEM_READ_WRITE, // bit-field flag to specify
+            sizeof (int)*(capacity + 1), // size in bytes of the buffer to allocated
+            NULL, // pointer to buffer data to be copied from host
+            &err // returned error code
+            );
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
+    m_d_mem = clCreateBuffer(
+            context, // a valid context
+            CL_MEM_READ_WRITE, // bit-field flag to specify
+            sizeof (int)*capacity, // size in bytes of the buffer to allocated
+            NULL, // pointer to buffer data to be copied from host
+            &err // returned error code
+            );
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
+    /*Enqueues a command to write data from host to memory to a buffer object.
+     *This functional is typically used to provide data for the kernel processing. 
+     */
+
+    err = clEnqueueWriteBuffer(
+            queue, //valid command queue 
+            f0_mem, //memory buffer object to write to
+            CL_TRUE, // indicate blocking write
+            0, //the offset in the buffer object to write to
+            sizeof (int)*(capacity + 1), //size in bytes of data to write to
+            f0, //pointer to buffer in host mem to read data from
+            0, //number of events in the event list 
+            NULL, //list of events that needs to complete before this executes
+            NULL); //event object to return on completion
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
+    err = clEnqueueWriteBuffer(
+            queue, //valid command queue 
+            f1_mem, //memory buffer object to write to
+            CL_TRUE, // indicate blocking write
+            0, //the offset in the buffer object to write to
+            sizeof (int)*(capacity + 1), //size in bytes of data to write to
+            f1, //pointer to buffer in host mem to read data from
+            0, //number of events in the event list 
+            NULL, //list of events that needs to complete before this executes
+            NULL); //event object to return on completion
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
+    err = clEnqueueWriteBuffer(
+            queue, //valid command queue 
+            m_d_mem, //memory buffer object to write to
+            CL_TRUE, // indicate blocking write
+            0, //the offset in the buffer object to write to
+            sizeof (int)*capacity, //size in bytes of data to write to
+            m_d, //pointer to buffer in host mem to read data from
+            0, //number of events in the event list 
+            NULL, //list of events that needs to complete before this executes
+            NULL); //event object to return on completion
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
+
+
+
+    /*A kernel object is an encapsulation of the specify
+     * __kernel function along with the arguments that are associated with the 
+     * __kernel function when executed. The kernel object is eventually sent to 
+     * the command queue for execution.*/
+
+    kernel = clCreateKernel(
+            program, // a valid program object that has been successfully built
+            "knapsack", // the name of the kernel declared with __kernel
+            &err // error return code
+            );
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
+    err = clSetKernelArg(
+            kernel, //valid kernel object
+            0, //the specific argument of a kernel
+            sizeof (cl_mem), //the size of the argument data
+            &f1_mem //a pointer of data used as the argument
+            );
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
+    err = clSetKernelArg(
+            kernel, //valid kernel object
+            1, //the specific argument of a kernel
+            sizeof (cl_mem), //the size of the argument data
+            &f0_mem//a pointer of data used as the argument
+            );
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
+    err = clSetKernelArg(
+            kernel, //valid kernel object
+            2, //the specific argument of a kernel
+            sizeof (cl_mem), //the size of the argument data
+            &m_d_mem //a pointer of data used as the argument
+            );
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
+    err = clSetKernelArg(
+            kernel, //valid kernel object
+            3, //the specific argument of a kernel
+            sizeof (int), //the size of the argument data
+            &cmax //a pointer of data used as the argument
+            );
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
+    err = clSetKernelArg(
+            kernel, //valid kernel object
+            4, //the specific argument of a kernel
+            sizeof (int), //the size of the argument data
+            &weightk //a pointer of data used as the argument
+            );
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
+    err = clSetKernelArg(
+            kernel, //valid kernel object
+            5, //the specific argument of a kernel
+            sizeof (int), //the size of the argument data
+            &valuek //a pointer of data used as the argument
+            );
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
+    /*each kernel execution in OpenCL is called a work-item. 
+     * OpenCL exploits parallel computation of the compute devices by having 
+     * instances of the kernel execute on different portions of the 
+     * N-dimensional problem space. In addition, each work-item is executed 
+     * only with its assigned data. Thus, it is important specify to OpenCL 
+     * how many work-items are needed to process all data.*/
+    err = clGetKernelWorkGroupInfo(kernel,
+            device_id[i],
+            CL_KERNEL_WORK_GROUP_SIZE,
+            sizeof (size_t),
+            &size,
+            NULL);
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+    cout << "\nCL_KERNEL_WORK_GROUP_SIZE: " << size << endl;
+
+
+
+
+    /*
+     * Enqueues a command to execute a kernel on a device.
+     * 
+     * OpenCL allows work-items to be combined into work-groups, and all work-items
+     * within a work-group are executed on the same compute unit on the same device.
+     * When a work-group size is specified, OpenCL divides the global work size among 
+     * the compute units on the device. In addition, work-items within a work-group
+     * execute synchronously and are able to share memory. The total number of
+     * work-items  in a work-group is known as the local work size. Group seizes
+     * cannot be assigned arbitrarily; the provided OpenCL function clGetKernelWorkGroupInfo()
+     * must be used to query the group size info of a device.
+     */
+
+
+
+    err = clEnqueueNDRangeKernel(
+            queue, // valid command queue
+            kernel, // valid kernel object
+            1, // the work problem dimensions
+            NULL, //must be NULL
+            global_work_items, // work-items for each dimension
+            local_work_items, // work-group size for each dimension
+            0, // number of event in the event list
+            NULL, // list of events that needs to complete before this executes
+            NULL // event object to return on completion
+            );
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
+    /* Enqueues a command to read data from a buffer object into host memory.
+     * This function is typically used to READ RESULTS FROM the KERNEL execution
+     * back to host program. 
+     * Reads the cl memory "output_mem" on device to the host variable "f".
+     */
+
+
+    err = clEnqueueReadBuffer(
+            queue, //valid command queue 
+            f0_mem, //memory buffer object to write to
+            CL_TRUE, // indicate blocking write
+            0, //the offset in the buffer object to write to
+            sizeof (int)*(capacity + 1), //size in bytes of data to write to
+            f0, //pointer to buffer in host mem to read data from
+            0, //number of events in the event list 
+            NULL, //list of events that needs to complete before this executes
+            NULL); //event object to return on completion
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
+    err = clEnqueueReadBuffer(
+            queue, //valid command queue 
+            m_d_mem, //memory buffer object to write to
+            CL_TRUE, // indicate blocking write
+            0, //the offset in the buffer object to write to
+            sizeof (int)*numelem, //size in bytes of data to write to
+            m_d, //pointer to buffer in host mem to read data from
+            0, //number of events in the event list 
+            NULL, //list of events that needs to complete before this executes
+            NULL); //event object to return on completion
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+
+    cout << "f0 after buffer enqueue: " << endl;
+    for (int i = 0; i < capacity + 1; i++)
+        cout << f0[i];
+    cout << endl;
+    cout << "m_d after buffer enqueue: " << endl;
+    for (int i = 0; i < capacity; i++)
+        cout << m_d[i];
+
+    cout << endl;
+}
+
+int Knapsack::getNumDevices() {
+    return (int) num_devices;
 }
