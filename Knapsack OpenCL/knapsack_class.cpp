@@ -515,7 +515,7 @@ void Knapsack::createProgramBuild(int i) {
     string sourceKernel, line;
 
 
-    ofs.open("..\\knapsack_toth.cl", ios_base::in);
+    ofs.open("..\\OpenCL\\Knapsack OpenCL\\knapsack_toth.cl", ios_base::in);
     if (ofs.is_open()) {
         while (ofs.good()) {
             getline(ofs, line);
@@ -840,6 +840,10 @@ void Knapsack::printResults() {
         }
 
     }
+    for (int i = 0; i < capacity + 1; i++) {
+        *(f1 + i) = 0; //f[i] = 0;
+        *(f0 + i) = 0;
+    }
     cout << "*************************************************" << endl;
     cout << "END OF THE PRINTOUT" << endl;
 }
@@ -1043,10 +1047,10 @@ Knapsack::Knapsack() {
 }
 
 void Knapsack::executeComputation(int i) {
-
+    int sumK = sumWeight;
     for (int k = 0; k < numelem; k++) {
 
-        int sumK = sumWeight - weight[k];
+        sumK = sumK - weight[k];
         cmax = 0;
         cmax = max(capacity - sumK, weight[k]);
 
@@ -1075,9 +1079,6 @@ void Knapsack::executeComputation(int i) {
             *(m_d + i) = 0;
         }
         cout << endl;
-
-
-
     }
 
 }
@@ -1151,9 +1152,6 @@ void Knapsack::pari(int weightk, int valuek, int i) {
             NULL); //event object to return on completion
     if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 
-
-
-
     /*A kernel object is an encapsulation of the specify
      * __kernel function along with the arguments that are associated with the 
      * __kernel function when executed. The kernel object is eventually sent to 
@@ -1220,6 +1218,7 @@ void Knapsack::pari(int weightk, int valuek, int i) {
      * N-dimensional problem space. In addition, each work-item is executed 
      * only with its assigned data. Thus, it is important specify to OpenCL 
      * how many work-items are needed to process all data.*/
+    
     err = clGetKernelWorkGroupInfo(kernel,
             device_id[i],
             CL_KERNEL_WORK_GROUP_SIZE,
@@ -1228,9 +1227,6 @@ void Knapsack::pari(int weightk, int valuek, int i) {
             NULL);
     if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     cout << "\nCL_KERNEL_WORK_GROUP_SIZE: " << size << endl;
-
-
-
 
     /*
      * Enqueues a command to execute a kernel on a device.
@@ -1244,8 +1240,6 @@ void Knapsack::pari(int weightk, int valuek, int i) {
      * cannot be assigned arbitrarily; the provided OpenCL function clGetKernelWorkGroupInfo()
      * must be used to query the group size info of a device.
      */
-
-
 
     err = clEnqueueNDRangeKernel(
             queue, // valid command queue
@@ -1439,6 +1433,7 @@ void Knapsack::dispari(int weightk, int valuek, int i) {
      * N-dimensional problem space. In addition, each work-item is executed 
      * only with its assigned data. Thus, it is important specify to OpenCL 
      * how many work-items are needed to process all data.*/
+    
     err = clGetKernelWorkGroupInfo(kernel,
             device_id[i],
             CL_KERNEL_WORK_GROUP_SIZE,
@@ -1447,9 +1442,6 @@ void Knapsack::dispari(int weightk, int valuek, int i) {
             NULL);
     if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     cout << "\nCL_KERNEL_WORK_GROUP_SIZE: " << size << endl;
-
-
-
 
     /*
      * Enqueues a command to execute a kernel on a device.
@@ -1463,9 +1455,7 @@ void Knapsack::dispari(int weightk, int valuek, int i) {
      * cannot be assigned arbitrarily; the provided OpenCL function clGetKernelWorkGroupInfo()
      * must be used to query the group size info of a device.
      */
-
-
-
+    
     err = clEnqueueNDRangeKernel(
             queue, // valid command queue
             kernel, // valid kernel object
@@ -1503,7 +1493,7 @@ void Knapsack::dispari(int weightk, int valuek, int i) {
             m_d_mem, //memory buffer object to write to
             CL_TRUE, // indicate blocking write
             0, //the offset in the buffer object to write to
-            sizeof (int)*numelem, //size in bytes of data to write to
+            sizeof (int)*capacity, //size in bytes of data to write to
             m_d, //pointer to buffer in host mem to read data from
             0, //number of events in the event list 
             NULL, //list of events that needs to complete before this executes
