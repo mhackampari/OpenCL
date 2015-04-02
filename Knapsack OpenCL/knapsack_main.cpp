@@ -27,7 +27,7 @@ int main(int argc, char** argv) {
         ksack.createMemObjects();
         //7. Create Kernels
         //8. Provide arguments for the kernels.
-        //ksack.createKernel(i);
+        //ksack.createKernel();
         //9. Submit the kernels to the command queue for execution.
         //10. Copy the results from the device to the host
         //ksack.executeMemObjects();
