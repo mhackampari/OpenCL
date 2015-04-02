@@ -710,6 +710,108 @@ void Knapsack::createKernel(cl_mem &input, cl_mem &output, int weightk, int valu
 
 }
 
+void Knapsack::pari(int weightk, int valuek, int i) {
+
+    createMemObjects();
+    createKernel(f0_mem, f1_mem, weightk, valuek);
+    
+    /*each kernel execution in OpenCL is called a work-item. 
+     * OpenCL exploits parallel computation of the compute devices by having 
+     * instances of the kernel execute on different portions of the 
+     * N-dimensional problem space. In addition, each work-item is executed 
+     * only with its assigned data. Thus, it is important specify to OpenCL 
+     * how many work-items are needed to process all data.*/
+    
+    err = clGetKernelWorkGroupInfo(kernel,
+            device_id[i],
+            CL_KERNEL_WORK_GROUP_SIZE,
+            sizeof (size_t),
+            &size,
+            NULL);
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+    cout << "\nCL_KERNEL_WORK_GROUP_SIZE: " << size << endl;
+
+    /*
+     * Enqueues a command to execute a kernel on a device.
+     * 
+     * OpenCL allows work-items to be combined into work-groups, and all work-items
+     * within a work-group are executed on the same compute unit on the same device.
+     * When a work-group size is specified, OpenCL divides the global work size among 
+     * the compute units on the device. In addition, work-items within a work-group
+     * execute synchronously and are able to share memory. The total number of
+     * work-items  in a work-group is known as the local work size. Group seizes
+     * cannot be assigned arbitrarily; the provided OpenCL function clGetKernelWorkGroupInfo()
+     * must be used to query the group size info of a device.
+     */
+
+    err = clEnqueueNDRangeKernel(
+            queue, // valid command queue
+            kernel, // valid kernel object
+            1, // the work problem dimensions
+            NULL, //must be NULL
+            global_work_items, // work-items for each dimension
+            local_work_items, // work-group size for each dimension
+            0, // number of event in the event list
+            NULL, // list of events that needs to complete before this executes
+            NULL // event object to return on completion
+            );
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+    
+    readback(f1_mem, f1);
+    
+}
+
+void Knapsack::dispari(int weightk, int valuek, int i) {
+
+    createMemObjects();
+    createKernel(f1_mem, f0_mem, weightk, valuek);
+
+    /*each kernel execution in OpenCL is called a work-item. 
+     * OpenCL exploits parallel computation of the compute devices by having 
+     * instances of the kernel execute on different portions of the 
+     * N-dimensional problem space. In addition, each work-item is executed 
+     * only with its assigned data. Thus, it is important specify to OpenCL 
+     * how many work-items are needed to process all data.*/
+    
+    err = clGetKernelWorkGroupInfo(kernel,
+            device_id[i],
+            CL_KERNEL_WORK_GROUP_SIZE,
+            sizeof (size_t),
+            &size,
+            NULL);
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+    cout << "\nCL_KERNEL_WORK_GROUP_SIZE: " << size << endl;
+
+    /*
+     * Enqueues a command to execute a kernel on a device.
+     * 
+     * OpenCL allows work-items to be combined into work-groups, and all work-items
+     * within a work-group are executed on the same compute unit on the same device.
+     * When a work-group size is specified, OpenCL divides the global work size among 
+     * the compute units on the device. In addition, work-items within a work-group
+     * execute synchronously and are able to share memory. The total number of
+     * work-items  in a work-group is known as the local work size. Group seizes
+     * cannot be assigned arbitrarily; the provided OpenCL function clGetKernelWorkGroupInfo()
+     * must be used to query the group size info of a device.
+     */
+    
+    err = clEnqueueNDRangeKernel(
+            queue, // valid command queue
+            kernel, // valid kernel object
+            1, // the work problem dimensions
+            NULL, //must be NULL
+            global_work_items, // work-items for each dimension
+            local_work_items, // work-group size for each dimension
+            0, // number of event in the event list
+            NULL, // list of events that needs to complete before this executes
+            NULL // event object to return on completion
+            );
+    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+    
+    readback(f0_mem, f0);
+    
+}
+
 void Knapsack::readback(cl_mem &output_mem, int* output){
     
     /* Enqueues a command to read data from a buffer object into host memory.
@@ -742,6 +844,7 @@ void Knapsack::readback(cl_mem &output_mem, int* output){
             NULL); //event object to return on completion
     if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
 }
+
 void Knapsack::printResults() {
     cout << "\nPRINTOUT OF THE RESULTS: " << endl;
     cout << "*************************************************" << endl;
@@ -790,6 +893,77 @@ void Knapsack::printResults() {
     cout << "END OF THE PRINTOUT" << endl;
 }
 
+Knapsack::Knapsack() {
+    
+    const int vtemp[] = {1, 3, 2, 4};
+    const int wtemp[] = {2, 3, 2, 2};
+    capacity = 5;
+    numelem = sizeof (vtemp) / sizeof (int);
+
+    value = (int *) malloc(sizeof (int)*numelem);
+    weight = (int *) malloc(sizeof (int)*numelem);
+    f1 = (int *) malloc(sizeof (int)*(capacity + 1)); //f[capacity +1]
+    f0 = (int *) malloc(sizeof (int)*(capacity + 1)); //f[0, ..., capacity]
+    M = (int *) malloc(sizeof (int)*numelem * capacity); //M[numelem][capacity]
+    m_d = (int *) malloc(sizeof (int)*(capacity)); //m_d[1, ..., capacity] this a row of M matrix
+    global_work_items = (size_t *) malloc(sizeof (size_t));
+    local_work_items = (size_t *) malloc(sizeof (size_t));
+
+    memcpy(value, vtemp, sizeof (int)*numelem);
+    memcpy(weight, wtemp, sizeof (int)*numelem);
+    sumWeight = 0;
+
+    for (int i = 0; i < numelem; i++) {
+        sumWeight += weight[i];
+    }
+
+    for (int i = 0; i < capacity + 1; i++) {
+        *(f1 + i) = 0; //f[i] = 0;
+        *(f0 + i) = 0;
+    }
+
+    for (int i = 0; i < numelem * capacity; i++) {
+        *(M + i) = 0; //M[i]=0;
+
+        if (i < capacity) {
+            *(m_d + i) = 0;
+        }
+    }
+
+}
+
+void Knapsack::executeComputation(int i) {
+    int sumK = sumWeight;
+    for (int k = 0; k < numelem; k++) {
+
+        sumK = sumK - weight[k];
+        cmax = 0;
+        cmax = max(capacity - sumK, weight[k]);
+
+        *global_work_items = (size_t) (capacity - cmax + 1);
+        *local_work_items = getLocalWorkItems(*global_work_items, *device_max_work_group_size);
+        cout << "global_work_items: " << *global_work_items << endl;
+        cout << "local_work_items: " << *local_work_items << endl;
+
+        for (int i = 0; i < capacity; i++)
+            cout << *(m_d + i);
+        cout << endl;
+
+        if (k % 2 == 0) {
+            pari(weight[k], value[k], i);
+        } else {
+            dispari(weight[k], value[k], i);
+        }
+        
+        memcpy(M + k*capacity, m_d, sizeof (int)*capacity);
+        for (int i = 0; i < capacity; i++) {
+            *(m_d + i) = 0;
+        }
+        
+    }
+
+}
+
 size_t Knapsack::getLocalWorkItems(size_t globalThreads, size_t maxWorkItemSize) {
     /* Each kernel execution in OpenCL is called a work-item thus is important 
      * specify to OpenCL how many work-items are needed to process all data.
@@ -811,6 +985,9 @@ size_t Knapsack::getLocalWorkItems(size_t globalThreads, size_t maxWorkItemSize)
     return SDK_SUCCESS;
 }
 
+int Knapsack::getNumDevices() {
+    return (int) num_devices;
+}
 void Knapsack::cleanup() {
     err = clReleaseKernel(kernel);
     if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
@@ -941,187 +1118,4 @@ string Knapsack::getErrorCode(int e) {
         default:
             return "unknown error code";
     }
-}
-
-Knapsack::Knapsack() {
-    const int vtemp[] = {1, 3, 2, 4};
-    const int wtemp[] = {2, 3, 2, 2};
-    capacity = 5;
-    numelem = sizeof (vtemp) / sizeof (int);
-
-    value = (int *) malloc(sizeof (int)*numelem);
-    weight = (int *) malloc(sizeof (int)*numelem);
-    f1 = (int *) malloc(sizeof (int)*(capacity + 1)); //f[capacity +1]
-    f0 = (int *) malloc(sizeof (int)*(capacity + 1)); //f[0, ..., capacity]
-    M = (int *) malloc(sizeof (int)*numelem * capacity); //M[numelem][capacity]
-    m_d = (int *) malloc(sizeof (int)*(capacity)); //m_d[1, ..., capacity] this a row of M matrix
-    global_work_items = (size_t *) malloc(sizeof (size_t));
-    local_work_items = (size_t *) malloc(sizeof (size_t));
-
-    memcpy(value, vtemp, sizeof (int)*numelem);
-    memcpy(weight, wtemp, sizeof (int)*numelem);
-    sumWeight = 0;
-
-    for (int i = 0; i < numelem; i++) {
-        sumWeight += weight[i];
-    }
-
-    for (int i = 0; i < capacity + 1; i++) {
-        *(f1 + i) = 0; //f[i] = 0;
-        *(f0 + i) = 0;
-    }
-
-    for (int i = 0; i < numelem * capacity; i++) {
-        *(M + i) = 0; //M[i]=0;
-
-        if (i < capacity) {
-            *(m_d + i) = 0;
-        }
-    }
-
-}
-
-void Knapsack::executeComputation(int i) {
-    int sumK = sumWeight;
-    for (int k = 0; k < numelem; k++) {
-
-        sumK = sumK - weight[k];
-        cmax = 0;
-        cmax = max(capacity - sumK, weight[k]);
-
-        *global_work_items = (size_t) (capacity - cmax + 1);
-        *local_work_items = getLocalWorkItems(*global_work_items, *device_max_work_group_size);
-        cout << "global_work_items: " << *global_work_items << endl;
-        cout << "local_work_items: " << *local_work_items << endl;
-
-        for (int i = 0; i < capacity; i++)
-            cout << *(m_d + i);
-        cout << endl;
-
-        if (k % 2 == 0) {
-            //createKernel(f0_mem, f1_mem, weight[k], value[k], i);
-            //executeMemObjects(f1_mem, f1);
-            pari(weight[k], value[k], i);
-        } else {
-            //createKernel(f1_mem, f0_mem, weight[k], value[k], i);
-            //executeMemObjects(f0_mem, f0);
-            dispari(weight[k], value[k], i);
-            
-        }
-        
-        memmove(M + k*capacity, m_d, sizeof (int)*capacity);
-        cout << k << ": ";
-        for (int i = 0; i < capacity; i++) {
-            cout << *(m_d + i);
-            *(m_d + i) = 0;
-        }
-        cout << endl;
-    }
-
-}
-
-void Knapsack::pari(int weightk, int valuek, int i) {
-
-    createMemObjects();
-    createKernel(f0_mem, f1_mem, weightk, valuek);
-    
-    /*each kernel execution in OpenCL is called a work-item. 
-     * OpenCL exploits parallel computation of the compute devices by having 
-     * instances of the kernel execute on different portions of the 
-     * N-dimensional problem space. In addition, each work-item is executed 
-     * only with its assigned data. Thus, it is important specify to OpenCL 
-     * how many work-items are needed to process all data.*/
-    
-    err = clGetKernelWorkGroupInfo(kernel,
-            device_id[i],
-            CL_KERNEL_WORK_GROUP_SIZE,
-            sizeof (size_t),
-            &size,
-            NULL);
-    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    cout << "\nCL_KERNEL_WORK_GROUP_SIZE: " << size << endl;
-
-    /*
-     * Enqueues a command to execute a kernel on a device.
-     * 
-     * OpenCL allows work-items to be combined into work-groups, and all work-items
-     * within a work-group are executed on the same compute unit on the same device.
-     * When a work-group size is specified, OpenCL divides the global work size among 
-     * the compute units on the device. In addition, work-items within a work-group
-     * execute synchronously and are able to share memory. The total number of
-     * work-items  in a work-group is known as the local work size. Group seizes
-     * cannot be assigned arbitrarily; the provided OpenCL function clGetKernelWorkGroupInfo()
-     * must be used to query the group size info of a device.
-     */
-
-    err = clEnqueueNDRangeKernel(
-            queue, // valid command queue
-            kernel, // valid kernel object
-            1, // the work problem dimensions
-            NULL, //must be NULL
-            global_work_items, // work-items for each dimension
-            local_work_items, // work-group size for each dimension
-            0, // number of event in the event list
-            NULL, // list of events that needs to complete before this executes
-            NULL // event object to return on completion
-            );
-    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    
-    readback(f1_mem, f1);
-    
-}
-
-void Knapsack::dispari(int weightk, int valuek, int i) {
-
-    createMemObjects();
-    createKernel(f1_mem, f0_mem, weightk, valuek);
-
-    /*each kernel execution in OpenCL is called a work-item. 
-     * OpenCL exploits parallel computation of the compute devices by having 
-     * instances of the kernel execute on different portions of the 
-     * N-dimensional problem space. In addition, each work-item is executed 
-     * only with its assigned data. Thus, it is important specify to OpenCL 
-     * how many work-items are needed to process all data.*/
-    
-    err = clGetKernelWorkGroupInfo(kernel,
-            device_id[i],
-            CL_KERNEL_WORK_GROUP_SIZE,
-            sizeof (size_t),
-            &size,
-            NULL);
-    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    cout << "\nCL_KERNEL_WORK_GROUP_SIZE: " << size << endl;
-
-    /*
-     * Enqueues a command to execute a kernel on a device.
-     * 
-     * OpenCL allows work-items to be combined into work-groups, and all work-items
-     * within a work-group are executed on the same compute unit on the same device.
-     * When a work-group size is specified, OpenCL divides the global work size among 
-     * the compute units on the device. In addition, work-items within a work-group
-     * execute synchronously and are able to share memory. The total number of
-     * work-items  in a work-group is known as the local work size. Group seizes
-     * cannot be assigned arbitrarily; the provided OpenCL function clGetKernelWorkGroupInfo()
-     * must be used to query the group size info of a device.
-     */
-    
-    err = clEnqueueNDRangeKernel(
-            queue, // valid command queue
-            kernel, // valid kernel object
-            1, // the work problem dimensions
-            NULL, //must be NULL
-            global_work_items, // work-items for each dimension
-            local_work_items, // work-group size for each dimension
-            0, // number of event in the event list
-            NULL, // list of events that needs to complete before this executes
-            NULL // event object to return on completion
-            );
-    if (err != CL_SUCCESS)cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    
-    readback(f0_mem, f0);
-    
-}
-
-int Knapsack::getNumDevices() {
-    return (int) num_devices;
 }

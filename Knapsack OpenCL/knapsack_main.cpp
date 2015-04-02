@@ -31,12 +31,14 @@ int main(int argc, char** argv) {
         //9. Submit the kernels to the command queue for execution.
         //10. Copy the results from the device to the host
         //ksack.executeMemObjects();
+        
         ksack.executeComputation(i);
 
         ksack.printResults();
 
 
     }
+    
     ksack.cleanup();
     return 0;
 }
