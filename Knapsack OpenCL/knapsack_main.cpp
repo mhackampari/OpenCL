@@ -1,7 +1,7 @@
 /*
  * File:   knapsack_main.cpp
  * Author: terminator
- *
+ *TODO: write to the file the results and add timer function
  * Created on February 21, 2015, 10:07 PM
  */
 #include <CL/cl.h>
