@@ -59,23 +59,23 @@ class Knapsack{
     //initialize variables
     public:Knapsack();
 
-    void queryOclPlatformInfo();
-    void queryOclDevice();
+    void queryOclPlatformInfo(fstream *);
+    void queryOclDevice(fstream *);
 public: int getNumDevices(); 
-    void queryOclDeviceInfo(int i);
-    void createContextQueue(int i);
-    void createProgramBuild(int i);
-    void createMemObjects();
-    void createKernel(cl_mem &input, cl_mem &output, int weight, int value);
+    void queryOclDeviceInfo(int i, fstream *);
+    void createContextQueue(int i, fstream *);
+    void createProgramBuild(int i, fstream *);
+    void createMemObjects(fstream *);
+    void createKernel(cl_mem &input, cl_mem &output, int weight, int value, fstream *);
     size_t getLocalWorkItems(size_t globalWorkItems, size_t max_work_group_items);
-    void executeMemObjects(cl_mem f_input, int *f);
-    void readback(cl_mem &output_mem, int *output);
-    void executeComputation(int i);
-    void printResults();
+    void executeMemObjects(cl_mem f_input, int *f, fstream *);
+    void readback(cl_mem &output_mem, int *output, fstream *);
+    void executeComputation(int i, fstream *);
+    void printResults(fstream *);
     string getErrorCode(int e);
     void cleanup();
-    void pari(int w, int v, int i);
-    void dispari(int w, int v, int i);
+    void pari(int w, int v, int i, fstream *);
+    void dispari(int w, int v, int i, fstream *);
     void CL_CALLBACK myCallBack(cl_event event, cl_int cmd_exec_status, void *user_data);
     void OpenCL_Context_Callback(const char *errinfo, const void *private_info, size_t cb, void *user_data);
     

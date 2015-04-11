@@ -10,21 +10,25 @@
 int main(int argc, char** argv) {
 
     Knapsack ksack;
+    fstream logfile;
+    logfile.open("results_knapsack.txt", ios::out);
+    logfile << "HELLO!\n";
+    
     //1.Query the host system for OpenCL platform info
-    ksack.queryOclPlatformInfo();
+    ksack.queryOclPlatformInfo(&logfile);
     //2. Query the host for OpenCL devices
-    ksack.queryOclDevice();
+    ksack.queryOclDevice(&logfile);
 
     for (int i=0; i < ksack.getNumDevices(); i++) {
 
-        ksack.queryOclDeviceInfo(i);
+        ksack.queryOclDeviceInfo(i, &logfile);
         //3. Create a context and a queue to associate the OpenCL devices.
-        ksack.createContextQueue(i);
+        ksack.createContextQueue(i, &logfile);
         //4. Create programs that will run on one or more associated devices.
-        ksack.createProgramBuild(i);
+        ksack.createProgramBuild(i, &logfile);
         //5. Create memory objects on the host or on the device.
         //6. Copy memory data to the device as needed. Create memory objects on the host or on the device.
-        ksack.createMemObjects();
+        ksack.createMemObjects(&logfile);
         //7. Create Kernels
         //8. Provide arguments for the kernels.
         //ksack.createKernel();
@@ -32,13 +36,13 @@ int main(int argc, char** argv) {
         //10. Copy the results from the device to the host
         //ksack.executeMemObjects();
         
-        ksack.executeComputation(i);
+        ksack.executeComputation(i, &logfile);
 
-        ksack.printResults();
+        ksack.printResults(&logfile);
 
 
     }
-    
+    logfile.close();
     ksack.cleanup();
     return 0;
 }
