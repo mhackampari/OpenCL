@@ -12,7 +12,11 @@ int main(int argc, char** argv) {
     Knapsack ksack;
     fstream logfile;
     logfile.open("results_knapsack.txt", ios::out);
-    logfile << "HELLO!\n";
+    int e = 2;
+    int b = 1;
+    int clk = 4;
+    b-=e-clk;
+    cout<< b <<endl;
     
     //1.Query the host system for OpenCL platform info
     ksack.queryOclPlatformInfo(&logfile);

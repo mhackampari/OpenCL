@@ -646,7 +646,7 @@ void Knapsack::createContextQueue(int i, fstream *logfile) {
 
     queue = clCreateCommandQueue(context,
             device_id[i],
-            0,
+            CL_QUEUE_PROFILING_ENABLE,
             &err);
 
     if (err != CL_SUCCESS) {
@@ -950,13 +950,37 @@ void Knapsack::pari(int weightk, int valuek, int i, fstream* logfile) {
             local_work_items, // work-group size for each dimension
             0, // number of event in the event list
             NULL, // list of events that needs to complete before this executes
-            NULL // event object to return on completion
+            &prof_event // event object to return on completion
             );
+    
     if (err != CL_SUCCESS) {
         cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
         *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     }
-
+    
+    clFinish(queue);
+    if (err != CL_SUCCESS) {
+        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+    }
+    
+    err = clGetEventProfilingInfo(prof_event, CL_PROFILING_COMMAND_QUEUED, sizeof(cl_ulong), &start_time, NULL);
+    if (err != CL_SUCCESS) {
+        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+    }
+    
+    err = clGetEventProfilingInfo(prof_event, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &end_time, NULL);
+    if (err != CL_SUCCESS) {
+        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+    }
+    
+    double run_time = (double)(end_time - start_time)*pow(10, -9);
+    
+    cout << "Profiling Info: " << run_time <<endl;
+    *logfile << "Profiling Info: " << run_time <<endl;
+            
     readback(f1_mem, f1, logfile);
 
 }
@@ -1008,12 +1032,13 @@ void Knapsack::dispari(int weightk, int valuek, int i, fstream* logfile) {
             local_work_items, // work-group size for each dimension
             0, // number of event in the event list
             NULL, // list of events that needs to complete before this executes
-            NULL // event object to return on completion
+            &prof_event // event object to return on completion
             );
     if (err != CL_SUCCESS) {
         cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
         *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     }
+    
 
     readback(f0_mem, f0, logfile);
 
@@ -1181,11 +1206,6 @@ void Knapsack::executeComputation(int i, fstream *logfile) {
         cout << "local_work_items: " << *local_work_items << endl;
         *logfile << "global_work_items: " << *global_work_items << endl;
         *logfile << "local_work_items: " << *local_work_items << endl;
-
-        for (int i = 0; i < capacity; i++){
-            cout << *(m_d + i);
-            *logfile << *(m_d + i);
-        }
             
         cout << endl;
         *logfile << endl;

@@ -45,6 +45,8 @@ class Knapsack{
     cl_mem f1_mem, f0_mem;
     cl_mem m_d_mem;
     cl_kernel kernel;
+    cl_event prof_event;
+    cl_ulong start_time, end_time;
     ifstream ofs;
     
     //int M[3][5];
