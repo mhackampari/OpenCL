@@ -1,4 +1,6 @@
 #include "Knapsack.h"
+#include "Timer.h"
+#include "Chrono.h"
 using namespace std;
 
 /*query the total number of platforms available in the system.
@@ -958,7 +960,7 @@ void Knapsack::pari(int weightk, int valuek, int i, fstream* logfile) {
         *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     }
     
-    clFinish(queue);
+    err = clFinish(queue);
     if (err != CL_SUCCESS) {
         cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
         *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
@@ -976,7 +978,7 @@ void Knapsack::pari(int weightk, int valuek, int i, fstream* logfile) {
         *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     }
     
-    double run_time = (double)(end_time - start_time)*pow(10, -9);
+    double run_time = (double)(end_time - start_time)*pow(10, -6);//time in ms
     
     cout << "Profiling Info: " << run_time <<endl;
     *logfile << "Profiling Info: " << run_time <<endl;
@@ -1039,6 +1041,28 @@ void Knapsack::dispari(int weightk, int valuek, int i, fstream* logfile) {
         *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     }
     
+    err = clFinish(queue);
+    if (err != CL_SUCCESS) {
+        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+    }
+    
+    err = clGetEventProfilingInfo(prof_event, CL_PROFILING_COMMAND_QUEUED, sizeof(cl_ulong), &start_time, NULL);
+    if (err != CL_SUCCESS) {
+        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+    }
+    
+    err = clGetEventProfilingInfo(prof_event, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &end_time, NULL);
+    if (err != CL_SUCCESS) {
+        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+    }
+    
+    double run_time = (double)(end_time - start_time)*pow(10, -6);//time in ms
+    
+    cout << "Profiling Info: " << run_time <<endl;
+    *logfile << "Profiling Info: " << run_time <<endl;
 
     readback(f0_mem, f0, logfile);
 
@@ -1194,12 +1218,15 @@ Knapsack::Knapsack() {
 
 void Knapsack::executeComputation(int i, fstream *logfile) {
     int sumK = sumWeight;
+    Timer timer;
+    Chrono chrono;
+    timer.start();
+    chrono.startChrono();
     for (int k = 0; k < numelem; k++) {
 
         sumK = sumK - weight[k];
         cmax = 0;
         cmax = max(capacity - sumK, weight[k]);
-
         *global_work_items = (size_t) (capacity - cmax + 1);
         *local_work_items = getLocalWorkItems(*global_work_items, *device_max_work_group_size);
         cout << "global_work_items: " << *global_work_items << endl;
@@ -1222,6 +1249,13 @@ void Knapsack::executeComputation(int i, fstream *logfile) {
         }
 
     }
+    timer.stop();
+    chrono.stopChrono();
+    cout << "Total time with Timer: " << timer.getTime() << endl;
+    *logfile << "Total time with Timer: " << timer.getTime() << endl;
+    cout << "Total time with Chrono: " << chrono.getTimeChrono() << endl;
+    *logfile << "Total time with Chrono: " << chrono.getTimeChrono() << endl;
+    timer.reset();
 
 }
 

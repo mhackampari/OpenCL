@@ -6,17 +6,17 @@
  */
 #include <CL/cl.h>
 #include "Knapsack.h"
+#include "Chrono.h"
+#include "Timer.h"
 
 int main(int argc, char** argv) {
-
+    Chrono ch;
+    Timer tm;
+    tm.start();
+    ch.startChrono();
     Knapsack ksack;
     fstream logfile;
     logfile.open("results_knapsack.txt", ios::out);
-    int e = 2;
-    int b = 1;
-    int clk = 4;
-    b-=e-clk;
-    cout<< b <<endl;
     
     //1.Query the host system for OpenCL platform info
     ksack.queryOclPlatformInfo(&logfile);
@@ -48,6 +48,10 @@ int main(int argc, char** argv) {
     }
     logfile.close();
     ksack.cleanup();
+    ch.stopChrono();
+    tm.stop();
+    cout << "TOTAL TIME: "<<ch.getTimeChrono()<<endl;
+    cout << "TOTAL TIME2: "<<tm.getTime();
     return 0;
 }
 

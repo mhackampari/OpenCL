@@ -6,7 +6,8 @@
  */
 
 #include "Timer.h"
-
+//http://stackoverflow.com/questions/15235218/c-timer-milliseconds
+//better not to use timer but chrono
 Timer::Timer() {
     resetted = true;
 	running = false;
@@ -20,9 +21,9 @@ Timer::~Timer() {
 void Timer::start() {
 	if(! running) {
 		if(resetted)
-			beg = (unsigned long) clock();
+			beg = clock();
 		else
-			beg -= end - (unsigned long) clock();
+			beg -= end - clock();
 		running = true;
 		resetted = false;
 	}
@@ -30,31 +31,31 @@ void Timer::start() {
 
 void Timer::stop() {
 	if(running) {
-		end = (unsigned long) clock();
+		end = clock();
 		running = false;
 	}
 }
 
 void Timer::reset() {
-	bool wereRunning = running;
-	if(wereRunning)
+	//bool wereRunning = running;
+	if(isRunning())
 		stop();
 	resetted = true;
 	beg = 0;
 	end = 0;
-	if(wereRunning)
-		start();
+	
 }
 
 bool Timer::isRunning() {
 	return running;
 }
 
-unsigned long Timer::getTime() {
+//results are ms
+float Timer::getTime() {
 	if(running)
-		return ((unsigned long) clock() - beg) / CLOCKS_PER_SEC;
+		return 1000.0*(float)(clock() - beg) / CLOCKS_PER_SEC;
 	else
-		return end - beg;
+		return 1000.0*(float)(end - beg)/CLOCKS_PER_SEC;
 }
 
 bool Timer::isOver(unsigned long seconds) {

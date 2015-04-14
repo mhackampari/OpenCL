@@ -14,18 +14,18 @@ class Timer {
 public:
     Timer();
     Timer(const Timer& orig);
-    virtual ~Timer();
+    ~Timer();
     void start();
     void stop();
     void reset();
     bool isRunning();
-    unsigned long getTime();
+    float getTime();
     bool isOver(unsigned long seconds);
 private:
     bool resetted;
     bool running;
-    unsigned long beg;
-    unsigned long end;
+    clock_t beg;
+    clock_t end;
 };
 
 
