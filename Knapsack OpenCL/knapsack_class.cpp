@@ -1,27 +1,24 @@
+
+#include "TestData.h"
+#include <math.h>
 #include "Knapsack.h"
 #include "Timer.h"
 #include "Chrono.h"
 using namespace std;
+cl_uint num_platforms = 1;
 
 /*query the total number of platforms available in the system.
   There can be more than one platform.*/
 void Knapsack::queryOclPlatformInfo(fstream *logfile) {
-
-
-    //query for the number
-    err = clGetPlatformIDs(
-            0, // the number of entries that can added to platforms
-            NULL, // list of OpenCL found
-            &num_platforms); //stores the actual number of platforms present
 
     //prepare to allocate of the available platforms
     platforms = (cl_platform_id *) malloc(num_platforms * sizeof (cl_platform_id));
 
     //allocates the available platforms
     err = clGetPlatformIDs(
-            num_platforms,
-            platforms,
-            NULL);
+            1, // the number of entries that can added to platforms
+            platforms, // list of OpenCL found 
+            &num_platforms); //stores the actual number of platforms present
 
     //prints information for the platforms
     for (int i = 0; i < num_platforms; i++) {
@@ -29,17 +26,16 @@ void Knapsack::queryOclPlatformInfo(fstream *logfile) {
         *logfile << "*******************\n";
         for (int j = 0; j < sizeof (platform_const_value) / sizeof (cl_platform_info); j++) {
 
-
             //retrieve the size of the information for the current platform
             err = clGetPlatformInfo(
-                    platforms[0],
+                    platforms[i],
                     platform_const_value[j],
                     0,
                     0,
                     &size);
 
             //prepare right size for receiving of platform information
-            platform_info = (char *) malloc(size * sizeof (char));
+            platform_info = (char *) calloc(size, sizeof (char));
 
             //gets platform information
             err = clGetPlatformInfo(
@@ -51,6 +47,7 @@ void Knapsack::queryOclPlatformInfo(fstream *logfile) {
 
             cout << platform_const_string[j] << ": " << string(platform_info) << "\n";
             *logfile << platform_const_string[j] << ": " << string(platform_info) << "\n";
+            free(platform_info);
         }
     }
 
@@ -113,6 +110,7 @@ void Knapsack::queryOclDeviceInfo(int i, fstream *logfile) {
 
     cout << "\nCL_DEVICE_AVAILABLE: " << device_avbility[i];
     *logfile << "\nCL_DEVICE_AVAILABLE: " << device_avbility[i];
+    free(device_avbility);
 
     err = clGetDeviceInfo(device_id[i],
             CL_DEVICE_EXECUTION_CAPABILITIES,
@@ -138,9 +136,11 @@ void Knapsack::queryOclDeviceInfo(int i, fstream *logfile) {
         *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     }
 
+
     cout << "\nCL_DEVICE_EXECUTION_CAPABILITIES: " << device_exec_cap[i];
     *logfile << "\nCL_DEVICE_EXECUTION_CAPABILITIES: " << device_exec_cap[i];
-    
+    free(device_exec_cap);
+
     err = clGetDeviceInfo(device_id[i],
             CL_DEVICE_GLOBAL_MEM_CACHE_SIZE,
             0,
@@ -167,6 +167,7 @@ void Knapsack::queryOclDeviceInfo(int i, fstream *logfile) {
 
     cout << "\n CL_DEVICE_GLOBAL_MEM_CACHE_SIZE: " << device_global_mem_cache_size[i];
     *logfile << "\n CL_DEVICE_GLOBAL_MEM_CACHE_SIZE: " << device_global_mem_cache_size[i];
+    free(device_global_mem_cache_size);
 
     err = clGetDeviceInfo(device_id[i],
             CL_DEVICE_GLOBAL_MEM_CACHE_TYPE,
@@ -194,6 +195,7 @@ void Knapsack::queryOclDeviceInfo(int i, fstream *logfile) {
 
     cout << "\n CL_DEVICE_GLOBAL_MEM_CACHE_TYPE: " << device_global_mem_cache_type[i];
     *logfile << "\n CL_DEVICE_GLOBAL_MEM_CACHE_TYPE: " << device_global_mem_cache_type[i];
+    free(device_global_mem_cache_type);
 
     err = clGetDeviceInfo(device_id[i],
             CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE,
@@ -221,6 +223,7 @@ void Knapsack::queryOclDeviceInfo(int i, fstream *logfile) {
 
     cout << "\n CL_DEVICE_GLOBAL_MEM_CACHE_TYPE: " << device_global_mem_cacheline_size[i];
     *logfile << "\n CL_DEVICE_GLOBAL_MEM_CACHE_TYPE: " << device_global_mem_cacheline_size[i];
+    free(device_global_mem_cacheline_size);
 
     err = clGetDeviceInfo(device_id[i],
             CL_DEVICE_GLOBAL_MEM_SIZE,
@@ -248,6 +251,7 @@ void Knapsack::queryOclDeviceInfo(int i, fstream *logfile) {
 
     cout << "\n CL_DEVICE_GLOBAL_MEM_SIZE: " << device_global_mem_size[i];
     *logfile << "\n CL_DEVICE_GLOBAL_MEM_SIZE: " << device_global_mem_size[i];
+    free(device_global_mem_size);
 
     err = clGetDeviceInfo(device_id[i],
             CL_DEVICE_LOCAL_MEM_SIZE,
@@ -275,6 +279,7 @@ void Knapsack::queryOclDeviceInfo(int i, fstream *logfile) {
 
     cout << "\n CL_DEVICE_LOCAL_MEM_SIZE: " << device_local_mem_size[i];
     *logfile << "\n CL_DEVICE_LOCAL_MEM_SIZE: " << device_local_mem_size[i];
+    free(device_local_mem_size);
 
     err = clGetDeviceInfo(device_id[i],
             CL_DEVICE_LOCAL_MEM_TYPE,
@@ -302,6 +307,7 @@ void Knapsack::queryOclDeviceInfo(int i, fstream *logfile) {
 
     cout << "\n CL_DEVICE_LOCAL_MEM_SIZE: " << device_local_mem_type[i];
     *logfile << "\n CL_DEVICE_LOCAL_MEM_SIZE: " << device_local_mem_type[i];
+    free(device_local_mem_type);
 
     err = clGetDeviceInfo(device_id[i],
             CL_DEVICE_MAX_CLOCK_FREQUENCY,
@@ -329,6 +335,7 @@ void Knapsack::queryOclDeviceInfo(int i, fstream *logfile) {
 
     cout << "\n CL_DEVICE_MAX_CLOCK_FREQUENCY: " << device_max_clock_freq[i];
     *logfile << "\n CL_DEVICE_MAX_CLOCK_FREQUENCY: " << device_max_clock_freq[i];
+    free(device_max_clock_freq);
 
     /*The number of parallel compute cores on the OpenCL device. The minimum value is 1.*/
     err = clGetDeviceInfo(device_id[i],
@@ -357,6 +364,7 @@ void Knapsack::queryOclDeviceInfo(int i, fstream *logfile) {
 
     cout << "\n CL_DEVICE_MAX_COMPUTE_UNITS: " << device_max_compute_units[i];
     *logfile << "\n CL_DEVICE_MAX_COMPUTE_UNITS: " << device_max_compute_units[i];
+    free(device_max_compute_units);
 
     /*Max size of memory object allocation in bytes. 
      * The minimum value is max 
@@ -387,6 +395,7 @@ void Knapsack::queryOclDeviceInfo(int i, fstream *logfile) {
 
     cout << "\n CL_DEVICE_MAX_MEM_ALLOC_SIZE: " << device_max_mem_alloc_size[i];
     *logfile << "\n CL_DEVICE_MAX_MEM_ALLOC_SIZE: " << device_max_mem_alloc_size[i];
+    free(device_max_mem_alloc_size);
 
     /*Maximum number of work-items in a work-group executing a kernel 
      *using the data parallel execution model. 
@@ -418,6 +427,7 @@ void Knapsack::queryOclDeviceInfo(int i, fstream *logfile) {
 
     cout << "\n CL_DEVICE_MAX_WORK_GROUP_SIZE: " << device_max_work_group_size[i];
     *logfile << "\n CL_DEVICE_MAX_WORK_GROUP_SIZE: " << device_max_work_group_size[i];
+    //free(device_max_work_group_size) is in cleanup function
 
     /*
      * Maximum dimensions that specify the global and local work-item IDs 
@@ -450,6 +460,7 @@ void Knapsack::queryOclDeviceInfo(int i, fstream *logfile) {
 
     cout << "\n CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS: " << device_max_work_item_dim[i];
     *logfile << "\n CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS: " << device_max_work_item_dim[i];
+    free(device_max_work_item_dim);
 
     /*DEVICE NAME*/
     err = clGetDeviceInfo(device_id[i],
@@ -482,7 +493,8 @@ void Knapsack::queryOclDeviceInfo(int i, fstream *logfile) {
     *logfile << "\n CL_DEVICE_MAX_WORK_ITEM_SIZES 1: " << device_max_work_items[0];
     *logfile << "\n CL_DEVICE_MAX_WORK_ITEM_SIZES 2: " << device_max_work_items[1];
     *logfile << "\n CL_DEVICE_MAX_WORK_ITEM_SIZES 3: " << device_max_work_items[2];
-    
+    free(device_max_work_items);
+
     err = clGetDeviceInfo(device_id[i],
             CL_DEVICE_NAME,
             0,
@@ -507,8 +519,9 @@ void Knapsack::queryOclDeviceInfo(int i, fstream *logfile) {
         *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     }
 
-    cout << "\n CL_DEVICE_NAME: " << device_name;
-    *logfile << "\n CL_DEVICE_NAME: " << device_name;
+    cout << "\n CL_DEVICE_NAME: " << string(device_name);
+    *logfile << "\n CL_DEVICE_NAME: " << string(device_name);
+    free(device_name);
 
     err = clGetDeviceInfo(device_id[i],
             CL_DEVICE_TYPE,
@@ -538,13 +551,17 @@ void Knapsack::queryOclDeviceInfo(int i, fstream *logfile) {
     *logfile << "\n CL_DEVICE_TYPE: ";
     switch (*device_type) {
         case(CL_DEVICE_TYPE_GPU): cout << "CL_DEVICE_TYPE_GPU";
-        *logfile << "CL_DEVICE_TYPE_GPU";
+            *logfile << "CL_DEVICE_TYPE_GPU";
             break;
         case(CL_DEVICE_TYPE_CPU): cout << "CL_DEVICE_TYPE_CPU";
-        *logfile << "CL_DEVICE_TYPE_CPU";
+            *logfile << "CL_DEVICE_TYPE_CPU";
             break;
-        default: cout << "OTHER_DEVICE"; *logfile << "OTHER_DEVICE"; break;
+        default: cout << "OTHER_DEVICE";
+            *logfile << "OTHER_DEVICE";
+            break;
     }
+
+    free(device_type);
 
     err = clGetDeviceInfo(device_id[i],
             CL_DEVICE_VENDOR,
@@ -567,6 +584,7 @@ void Knapsack::queryOclDeviceInfo(int i, fstream *logfile) {
 
     cout << "\n CL_DEVICE_VENDOR: " << string(device_vendor);
     *logfile << "\n CL_DEVICE_VENDOR: " << string(device_vendor);
+    free(device_vendor);
 
     err = clGetDeviceInfo(device_id[i],
             CL_DEVICE_VERSION,
@@ -594,6 +612,7 @@ void Knapsack::queryOclDeviceInfo(int i, fstream *logfile) {
 
     cout << "\n CL_DEVICE_VERSION: " << string(device_version);
     *logfile << "\n CL_DEVICE_VERSION: " << string(device_version);
+    free(device_version);
 
     err = clGetDeviceInfo(device_id[i],
             CL_DRIVER_VERSION,
@@ -621,6 +640,7 @@ void Knapsack::queryOclDeviceInfo(int i, fstream *logfile) {
 
     cout << "\n CL_DRIVER_VERSION: " << string(driver_version);
     *logfile << "\n CL_DRIVER_VERSION: " << string(driver_version);
+    free(driver_version);
 
 }
 
@@ -665,7 +685,7 @@ void Knapsack::createProgramBuild(int i, fstream *logfile) {
     string sourceKernel, line;
 
 
-    ofs.open("..\\OpenCL\\Knapsack OpenCL\\knapsack_toth.cl", ios_base::in);
+    ofs.open("knapsack_toth.cl", ios_base::in); //..//OpenCL//Knapsack OpenCL//knapsack_toth.cl
     if (ofs.is_open()) {
         while (ofs.good()) {
             getline(ofs, line);
@@ -724,6 +744,7 @@ void Knapsack::createProgramBuild(int i, fstream *logfile) {
         printf("%s\n", buffer);
         exit(1);
     }
+    free(x);
 
 
 }
@@ -765,6 +786,7 @@ void Knapsack::createMemObjects(fstream *logfile) {
             NULL, // pointer to buffer data to be copied from host
             &err // returned error code
             );
+
     if (err != CL_SUCCESS) {
         cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
         *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
@@ -818,6 +840,7 @@ void Knapsack::createMemObjects(fstream *logfile) {
         cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
         *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     }
+
 }
 
 void Knapsack::createKernel(cl_mem &input, cl_mem &output, int weightk, int valuek, fstream *logfile) {
@@ -907,7 +930,7 @@ void Knapsack::createKernel(cl_mem &input, cl_mem &output, int weightk, int valu
 
 void Knapsack::pari(int weightk, int valuek, int i, fstream* logfile) {
 
-    createMemObjects(logfile);
+    //createMemObjects(logfile);
     createKernel(f0_mem, f1_mem, weightk, valuek, logfile);
 
     /*each kernel execution in OpenCL is called a work-item. 
@@ -927,7 +950,7 @@ void Knapsack::pari(int weightk, int valuek, int i, fstream* logfile) {
         cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
         *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     }
-    cout << "\nCL_KERNEL_WORK_GROUP_SIZE: " << size << endl;
+    //cout << "\nCL_KERNEL_WORK_GROUP_SIZE: " << size << endl;
     *logfile << "\nCL_KERNEL_WORK_GROUP_SIZE: " << size << endl;
 
     /*
@@ -954,42 +977,42 @@ void Knapsack::pari(int weightk, int valuek, int i, fstream* logfile) {
             NULL, // list of events that needs to complete before this executes
             &prof_event // event object to return on completion
             );
-    
+
     if (err != CL_SUCCESS) {
         cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
         *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     }
-    
+
     err = clFinish(queue);
     if (err != CL_SUCCESS) {
         cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
         *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     }
-    
-    err = clGetEventProfilingInfo(prof_event, CL_PROFILING_COMMAND_QUEUED, sizeof(cl_ulong), &start_time, NULL);
+
+    err = clGetEventProfilingInfo(prof_event, CL_PROFILING_COMMAND_QUEUED, sizeof (cl_ulong), &start_time, NULL);
     if (err != CL_SUCCESS) {
         cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
         *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     }
-    
-    err = clGetEventProfilingInfo(prof_event, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &end_time, NULL);
+
+    err = clGetEventProfilingInfo(prof_event, CL_PROFILING_COMMAND_END, sizeof (cl_ulong), &end_time, NULL);
     if (err != CL_SUCCESS) {
         cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
         *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     }
-    
-    double run_time = (double)(end_time - start_time)*pow(10, -6);//time in ms
-    
-    cout << "Profiling Info: " << run_time <<endl;
-    *logfile << "Profiling Info: " << run_time <<endl;
-            
+
+    double run_time = (double) (end_time - start_time) * pow(10, -6); //time in ms
+
+    //cout << "Profiling Info: " << run_time << endl;
+    *logfile << "Profiling Info: " << run_time << endl;
+
     readback(f1_mem, f1, logfile);
 
 }
 
 void Knapsack::dispari(int weightk, int valuek, int i, fstream* logfile) {
 
-    createMemObjects(logfile);
+    //createMemObjects(logfile);
     createKernel(f1_mem, f0_mem, weightk, valuek, logfile);
 
     /*each kernel execution in OpenCL is called a work-item. 
@@ -1009,7 +1032,7 @@ void Knapsack::dispari(int weightk, int valuek, int i, fstream* logfile) {
         cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
         *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     }
-    cout << "\nCL_KERNEL_WORK_GROUP_SIZE: " << size << endl;
+    //cout << "\nCL_KERNEL_WORK_GROUP_SIZE: " << size << endl;
     *logfile << "\nCL_KERNEL_WORK_GROUP_SIZE: " << size << endl;
 
     /*
@@ -1040,29 +1063,29 @@ void Knapsack::dispari(int weightk, int valuek, int i, fstream* logfile) {
         cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
         *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     }
-    
+
     err = clFinish(queue);
     if (err != CL_SUCCESS) {
         cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
         *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     }
-    
-    err = clGetEventProfilingInfo(prof_event, CL_PROFILING_COMMAND_QUEUED, sizeof(cl_ulong), &start_time, NULL);
+
+    err = clGetEventProfilingInfo(prof_event, CL_PROFILING_COMMAND_QUEUED, sizeof (cl_ulong), &start_time, NULL);
     if (err != CL_SUCCESS) {
         cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
         *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     }
-    
-    err = clGetEventProfilingInfo(prof_event, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &end_time, NULL);
+
+    err = clGetEventProfilingInfo(prof_event, CL_PROFILING_COMMAND_END, sizeof (cl_ulong), &end_time, NULL);
     if (err != CL_SUCCESS) {
         cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
         *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     }
-    
-    double run_time = (double)(end_time - start_time)*pow(10, -6);//time in ms
-    
-    cout << "Profiling Info: " << run_time <<endl;
-    *logfile << "Profiling Info: " << run_time <<endl;
+
+    double run_time = (double) (end_time - start_time) * pow(10, -6); //time in ms
+
+    //cout << "Profiling Info: " << run_time << endl;
+    *logfile << "Profiling Info: " << run_time << endl;
 
     readback(f0_mem, f0, logfile);
 
@@ -1108,36 +1131,40 @@ void Knapsack::readback(cl_mem &output_mem, int* output, fstream *logfile) {
 }
 
 void Knapsack::printResults(fstream *logfile) {
+
     cout << "\nPRINTOUT OF THE RESULTS: " << endl;
     *logfile << "\nPRINTOUT OF THE RESULTS: " << endl;
     cout << "*************************************************" << endl;
     *logfile << "*************************************************" << endl;
-    cout << "Evolution of the Knapsack worth F[x]: ";
-    *logfile << "Evolution of the Knapsack worth F[x]: ";
+
+
+    /* cout << "Evolution of the Knapsack worth F[x]: ";
+     *logfile << "Evolution of the Knapsack worth F[x]: ";
     for (int i = 0; i < capacity + 1; i++) {
         if (numelem % 2 == 0) {
             cout << f0[i] << " ";
-            *logfile << f0[i] << " ";
+     *logfile << f0[i] << " ";
         } else {
             cout << *(f1 + i) << " ";
-            *logfile << *(f1 + i) << " ";
+     *logfile << *(f1 + i) << " ";
         }
 
-    }
-    
+    }*/
+
     cout << endl;
-    cout << "Matrix of decisions M[items][capacity]: " << endl;
-    *logfile << endl;
-    *logfile << "Matrix of decisions M[items][capacity]: " << endl;
+    /*/cout << "Matrix of decisions M[items][capacity]: " << endl;
+     *logfile << endl;
+     *logfile << "Matrix of decisions M[items][capacity]: " << endl;
     for (int i = 0; i < numelem * capacity; i++) {
-        cout << *(M + i) << "; ";
-        *logfile << *(M + i) << "; ";
-        if ((i + 1) % (capacity) == 0){
-            cout << endl;
-            *logfile << endl;
+        //cout << *(M + i) << "; ";
+     *logfile << *(M + i) << "; ";
+        if ((i + 1) % (capacity) == 0) {
+            //cout << endl;
+     *logfile << endl;
         }
-    }
-    
+    }*/
+
+    cout << "SumWeight: " << sumWeight << "\tCapacity: " << capacity << "\n";
     cout << "\nKnapsack's worth: ";
     *logfile << "\nKnapsack's worth: ";
     if (numelem % 2 == 0) {
@@ -1147,16 +1174,18 @@ void Knapsack::printResults(fstream *logfile) {
         cout << f1[capacity] << endl;
         *logfile << f1[capacity] << endl;
     }
+    cout << endl;
 
     cout << "Chosen items are:" << endl;
     *logfile << "Chosen items are:" << endl;
     int cap = capacity;
+    int capacita = 0;
     for (int item = numelem - 1; item > -1; item--) {
         for (int c = cap - 1; c > -1; c--) {
             if (M[item * (capacity) + c] != 0) {
                 cout << "Value: " << value[item];
                 cout << "\tWeight: " << weight[item] << endl;
-                
+                capacita += weight[item];
                 *logfile << "Value: " << value[item];
                 *logfile << "\tWeight: " << weight[item] << endl;
                 cap = cap - weight[item];
@@ -1167,52 +1196,37 @@ void Knapsack::printResults(fstream *logfile) {
         }
 
     }
+
+    cout << "\nCAPACITA: " << capacita << endl;
     for (int i = 0; i < capacity + 1; i++) {
         *(f1 + i) = 0; //f[i] = 0;
         *(f0 + i) = 0;
     }
+
+
     cout << "*************************************************" << endl;
     cout << "END OF THE PRINTOUT" << endl;
     *logfile << "*************************************************" << endl;
     *logfile << "END OF THE PRINTOUT" << endl;
+
 }
 
-Knapsack::Knapsack() {
+Knapsack::Knapsack(TestData& t) {
 
-    const int vtemp[] = {1, 3, 2, 4};
-    const int wtemp[] = {2, 3, 2, 2};
-    capacity = 5;
-    numelem = sizeof (vtemp) / sizeof (int);
+    numelem = t.getNumelem();
+    sumWeight = t.getSum();
+    capacity = t.getCapacity();
+    value = (int *) calloc(numelem, sizeof (int));
+    weight = (int *) calloc(numelem, sizeof (int));
 
-    value = (int *) malloc(sizeof (int)*numelem);
-    weight = (int *) malloc(sizeof (int)*numelem);
-    f1 = (int *) malloc(sizeof (int)*(capacity + 1)); //f[capacity +1]
-    f0 = (int *) malloc(sizeof (int)*(capacity + 1)); //f[0, ..., capacity]
-    M = (int *) malloc(sizeof (int)*numelem * capacity); //M[numelem][capacity]
-    m_d = (int *) malloc(sizeof (int)*(capacity)); //m_d[1, ..., capacity] this a row of M matrix
-    global_work_items = (size_t *) malloc(sizeof (size_t));
-    local_work_items = (size_t *) malloc(sizeof (size_t));
-
-    memcpy(value, vtemp, sizeof (int)*numelem);
-    memcpy(weight, wtemp, sizeof (int)*numelem);
-    sumWeight = 0;
-
-    for (int i = 0; i < numelem; i++) {
-        sumWeight += weight[i];
-    }
-
-    for (int i = 0; i < capacity + 1; i++) {
-        *(f1 + i) = 0; //f[i] = 0;
-        *(f0 + i) = 0;
-    }
-
-    for (int i = 0; i < numelem * capacity; i++) {
-        *(M + i) = 0; //M[i]=0;
-
-        if (i < capacity) {
-            *(m_d + i) = 0;
-        }
-    }
+    memcpy(value, t.getValue(), numelem);
+    memcpy(weight, t.getWeight(), numelem);
+    f1 = (int *) calloc((capacity + 1), sizeof (int)); //f[capacity +1]
+    f0 = (int *) calloc((capacity + 1), sizeof (int)); //f[0, ..., capacity]
+    M = (int *) calloc(numelem * capacity, sizeof (int)); //M[numelem][capacity]
+    m_d = (int *) calloc((capacity), sizeof (int)); //m_d[1, ..., capacity] this a row of M matrix
+    global_work_items = (size_t *) calloc(0, sizeof (size_t));
+    local_work_items = (size_t *) calloc(0, sizeof (size_t));
 
 }
 
@@ -1229,18 +1243,23 @@ void Knapsack::executeComputation(int i, fstream *logfile) {
         cmax = max(capacity - sumK, weight[k]);
         *global_work_items = (size_t) (capacity - cmax + 1);
         *local_work_items = getLocalWorkItems(*global_work_items, *device_max_work_group_size);
-        cout << "global_work_items: " << *global_work_items << endl;
-        cout << "local_work_items: " << *local_work_items << endl;
+        //cout << "global_work_items: " << *global_work_items << endl;
+        //cout << "local_work_items: " << *local_work_items << endl;
         *logfile << "global_work_items: " << *global_work_items << endl;
         *logfile << "local_work_items: " << *local_work_items << endl;
-            
-        cout << endl;
+
+        //cout << endl;
         *logfile << endl;
 
         if (k % 2 == 0) {
             pari(weight[k], value[k], i, logfile);
+            
         } else {
             dispari(weight[k], value[k], i, logfile);
+        }
+        err = clReleaseKernel(kernel);
+        if (err != CL_SUCCESS) {
+            cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
         }
 
         memcpy(M + k*capacity, m_d, sizeof (int)*capacity);
@@ -1284,15 +1303,7 @@ int Knapsack::getNumDevices() {
     return (int) num_devices;
 }
 
-void Knapsack::cleanup() {
-    err = clReleaseKernel(kernel);
-    if (err != CL_SUCCESS) {
-        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    }
-    err = clReleaseProgram(program);
-    if (err != CL_SUCCESS) {
-        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    }
+Knapsack::~Knapsack() {
 
     err = clReleaseMemObject(f0_mem);
     if (err != CL_SUCCESS) {
@@ -1302,18 +1313,39 @@ void Knapsack::cleanup() {
     if (err != CL_SUCCESS) {
         cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     }
-    
-    err = clReleaseCommandQueue(queue);
+    err = clReleaseMemObject(m_d_mem);
     if (err != CL_SUCCESS) {
         cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     }
+
+    err = clReleaseProgram(program);
+    if (err != CL_SUCCESS) {
+        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+    }
+
     err = clReleaseContext(context);
+    if (err != CL_SUCCESS) {
+        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+    }
+
+    err = clReleaseCommandQueue(queue);
     if (err != CL_SUCCESS) {
         cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     }
 
     free(platforms);
     free(device_id);
+    free(M);
+    free(value);
+    free(weight);
+    free(device_max_work_group_size);
+    free(f0);
+    free(f1);
+    free(m_d);
+    free(global_work_items);
+    free(local_work_items);
+
+    cout << "\n!!!Knapsack Class Has Been Destroyed!!!\n";
 }
 
 string Knapsack::getErrorCode(int e) {
@@ -1416,14 +1448,6 @@ string Knapsack::getErrorCode(int e) {
             return "CL_INVALID_MIP_LEVEL";
         case CL_INVALID_GLOBAL_WORK_SIZE:
             return "CL_INVALID_GLOBAL_WORK_SIZE";
-        case CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR:
-            return "CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR";
-        case CL_PLATFORM_NOT_FOUND_KHR:
-            return "CL_PLATFORM_NOT_FOUND_KHR";
-        case CL_DEVICE_PARTITION_FAILED_EXT:
-            return "CL_DEVICE_PARTITION_FAILED_EXT";
-        case CL_INVALID_PARTITION_COUNT_EXT:
-            return "CL_INVALID_PARTITION_COUNT_EXT";
         default:
             return "unknown error code";
     }

@@ -8,13 +8,16 @@
 #include "Knapsack.h"
 #include "Chrono.h"
 #include "Timer.h"
+#include "TestData.h"
 
 int main(int argc, char** argv) {
     Chrono ch;
     Timer tm;
+    TestData test(1100);
     tm.start();
     ch.startChrono();
-    Knapsack ksack;
+    
+    Knapsack ksack(test);
     fstream logfile;
     logfile.open("results_knapsack.txt", ios::out);
     
@@ -29,13 +32,13 @@ int main(int argc, char** argv) {
         //3. Create a context and a queue to associate the OpenCL devices.
         ksack.createContextQueue(i, &logfile);
         //4. Create programs that will run on one or more associated devices.
-        ksack.createProgramBuild(i, &logfile);
+       ksack.createProgramBuild(i, &logfile);
         //5. Create memory objects on the host or on the device.
         //6. Copy memory data to the device as needed. Create memory objects on the host or on the device.
-        ksack.createMemObjects(&logfile);
+       ksack.createMemObjects(&logfile);
         //7. Create Kernels
         //8. Provide arguments for the kernels.
-        //ksack.createKernel();
+       // ksack.createKernel();
         //9. Submit the kernels to the command queue for execution.
         //10. Copy the results from the device to the host
         //ksack.executeMemObjects();
@@ -44,14 +47,16 @@ int main(int argc, char** argv) {
 
         ksack.printResults(&logfile);
 
-
     }
     logfile.close();
-    ksack.cleanup();
+    //http://stackoverflow.com/questions/14063791/double-free-or-corruption-but-why
+   
     ch.stopChrono();
     tm.stop();
-    cout << "TOTAL TIME: "<<ch.getTimeChrono()<<endl;
+    cout << "TOTAL TIME: "<<ch.getTimeChrono() << endl;
     cout << "TOTAL TIME2: "<<tm.getTime();
+    
     return 0;
+    
 }
 

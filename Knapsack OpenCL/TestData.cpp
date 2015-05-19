@@ -14,29 +14,8 @@ TestData::TestData() {
     sum = 0;
     //picked this interval without any underlying criteria
     // unifdist(0,1000);
-    
-    init_data();
-
-}
-
-TestData::TestData(int numel) {
-
-    numelem = numel;
-    weight.resize(numelem, 0);
-    value.resize(numelem, 0);
-    sum = 0;
-    init_data();
-
-}
-
-TestData::~TestData() {
-    cout << "\nTEST DATA HAVE BEEN JUST DESTROYED\n";
-}
-
-void TestData::init_data() {
-    
     default_random_engine random_engine;
-    uniform_int_distribution<int> unifdist(0,1000);
+    uniform_int_distribution<int> unifdist(1,numelem);
     
     for (int i = 0; i < numelem; i++) {
         weight[i] = unifdist(random_engine); 
@@ -46,6 +25,46 @@ void TestData::init_data() {
 
     capacity = sum / 2;
 
+}
+
+TestData::TestData(int numel) {
+
+    numelem = numel;
+    weight.resize(numelem, 0);
+    value.resize(numelem, 0);
+    sum = 0;
+    
+    default_random_engine random_engine;
+    uniform_int_distribution<int> unifdist(1,numelem);
+    
+    for (int i = 0; i < numelem; i++) {
+        weight[i] = unifdist(random_engine); 
+        sum += weight[i];
+        value[i] = weight[i] + 50;
+    }
+
+    capacity = sum / 2;
+    
+
+}
+
+TestData::TestData(const TestData& t) {
+
+    cout << "COPY CONSTRUCTOR\n";
+    
+    numelem = this->numelem;
+    weight.resize(numelem, 0);
+    value.resize(numelem, 0);
+    sum = this->sum;
+    weight = this->weight;
+    value = this->value;
+    capacity = this->capacity;
+    
+
+}
+
+TestData::~TestData() {
+    cout << "\nTEST DATA HAVE BEEN JUST DESTROYED\n";
 }
 
 int* TestData::getValue() {
@@ -67,3 +86,5 @@ int TestData::getCapacity() {
 int TestData::getNumelem() {
     return numelem;
 }
+
+
