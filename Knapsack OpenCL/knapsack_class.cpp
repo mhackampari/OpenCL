@@ -5,12 +5,9 @@
 #include "Timer.h"
 #include "Chrono.h"
 using namespace std;
-cl_uint num_platforms = 1;
 
-/*query the total number of platforms available in the system.
-  There can be more than one platform.*/
 void Knapsack::queryOclPlatformInfo(fstream *logfile) {
-
+    num_platforms = 1;
     //prepare to allocate of the available platforms
     platforms = (cl_platform_id *) malloc(num_platforms * sizeof (cl_platform_id));
 
@@ -20,7 +17,6 @@ void Knapsack::queryOclPlatformInfo(fstream *logfile) {
             platforms, // list of OpenCL found 
             &num_platforms); //stores the actual number of platforms present
 
-    //prints information for the platforms
     for (int i = 0; i < num_platforms; i++) {
         cout << "*******************\n";
         *logfile << "*******************\n";
@@ -84,8 +80,10 @@ void Knapsack::queryOclDevice(fstream *logfile) {
 void Knapsack::queryOclDeviceInfo(int i, fstream *logfile) {
 
     size = 0;
+
+
     err = clGetDeviceInfo(device_id[i],
-            CL_DEVICE_AVAILABLE,
+            CL_DRIVER_VERSION,
             0,
             0,
             &size);
@@ -95,12 +93,12 @@ void Knapsack::queryOclDeviceInfo(int i, fstream *logfile) {
         *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     }
 
-    device_avbility = (bool *)malloc(size * sizeof (bool));
+    char *driver_version = (char *) malloc(size * sizeof (char));
 
     err = clGetDeviceInfo(device_id[i],
-            CL_DEVICE_AVAILABLE,
+            CL_DRIVER_VERSION,
             size,
-            device_avbility,
+            driver_version,
             NULL);
 
     if (err != CL_SUCCESS) {
@@ -108,392 +106,9 @@ void Knapsack::queryOclDeviceInfo(int i, fstream *logfile) {
         *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     }
 
-    cout << "\nCL_DEVICE_AVAILABLE: " << device_avbility[i];
-    *logfile << "\nCL_DEVICE_AVAILABLE: " << device_avbility[i];
-    free(device_avbility);
-
-    err = clGetDeviceInfo(device_id[i],
-            CL_DEVICE_EXECUTION_CAPABILITIES,
-            0,
-            0,
-            &size);
-
-    if (err != CL_SUCCESS) {
-        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    }
-
-    cl_device_exec_capabilities *device_exec_cap = (cl_device_exec_capabilities *) malloc(size * sizeof (cl_device_exec_capabilities));
-
-    err = clGetDeviceInfo(device_id[i],
-            CL_DEVICE_EXECUTION_CAPABILITIES,
-            size,
-            device_exec_cap,
-            NULL);
-
-    if (err != CL_SUCCESS) {
-        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    }
-
-
-    cout << "\nCL_DEVICE_EXECUTION_CAPABILITIES: " << device_exec_cap[i];
-    *logfile << "\nCL_DEVICE_EXECUTION_CAPABILITIES: " << device_exec_cap[i];
-    free(device_exec_cap);
-
-    err = clGetDeviceInfo(device_id[i],
-            CL_DEVICE_GLOBAL_MEM_CACHE_SIZE,
-            0,
-            0,
-            &size);
-
-    if (err != CL_SUCCESS) {
-        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    }
-
-    cl_ulong *device_global_mem_cache_size = (cl_ulong *) malloc(size * sizeof (cl_ulong));
-
-    err = clGetDeviceInfo(device_id[i],
-            CL_DEVICE_GLOBAL_MEM_CACHE_SIZE,
-            size,
-            device_global_mem_cache_size,
-            NULL);
-
-    if (err != CL_SUCCESS) {
-        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    }
-
-    cout << "\n CL_DEVICE_GLOBAL_MEM_CACHE_SIZE: " << device_global_mem_cache_size[i];
-    *logfile << "\n CL_DEVICE_GLOBAL_MEM_CACHE_SIZE: " << device_global_mem_cache_size[i];
-    free(device_global_mem_cache_size);
-
-    err = clGetDeviceInfo(device_id[i],
-            CL_DEVICE_GLOBAL_MEM_CACHE_TYPE,
-            0,
-            0,
-            &size);
-
-    if (err != CL_SUCCESS) {
-        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    }
-
-    cl_device_mem_cache_type *device_global_mem_cache_type = (cl_device_mem_cache_type *) malloc(size * sizeof (cl_device_mem_cache_type));
-
-    err = clGetDeviceInfo(device_id[i],
-            CL_DEVICE_GLOBAL_MEM_CACHE_TYPE,
-            size,
-            device_global_mem_cache_type,
-            NULL);
-
-    if (err != CL_SUCCESS) {
-        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    }
-
-    cout << "\n CL_DEVICE_GLOBAL_MEM_CACHE_TYPE: " << device_global_mem_cache_type[i];
-    *logfile << "\n CL_DEVICE_GLOBAL_MEM_CACHE_TYPE: " << device_global_mem_cache_type[i];
-    free(device_global_mem_cache_type);
-
-    err = clGetDeviceInfo(device_id[i],
-            CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE,
-            0,
-            0,
-            &size);
-
-    if (err != CL_SUCCESS) {
-        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    }
-
-    cl_uint *device_global_mem_cacheline_size = (cl_uint *) malloc(size * sizeof (cl_uint));
-
-    err = clGetDeviceInfo(device_id[i],
-            CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE,
-            size,
-            device_global_mem_cacheline_size,
-            NULL);
-
-    if (err != CL_SUCCESS) {
-        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    }
-
-    cout << "\n CL_DEVICE_GLOBAL_MEM_CACHE_TYPE: " << device_global_mem_cacheline_size[i];
-    *logfile << "\n CL_DEVICE_GLOBAL_MEM_CACHE_TYPE: " << device_global_mem_cacheline_size[i];
-    free(device_global_mem_cacheline_size);
-
-    err = clGetDeviceInfo(device_id[i],
-            CL_DEVICE_GLOBAL_MEM_SIZE,
-            0,
-            0,
-            &size);
-
-    if (err != CL_SUCCESS) {
-        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    }
-
-    cl_ulong *device_global_mem_size = (cl_ulong *) malloc(size * sizeof (cl_ulong));
-
-    err = clGetDeviceInfo(device_id[i],
-            CL_DEVICE_GLOBAL_MEM_SIZE,
-            size,
-            device_global_mem_size,
-            NULL);
-
-    if (err != CL_SUCCESS) {
-        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    }
-
-    cout << "\n CL_DEVICE_GLOBAL_MEM_SIZE: " << device_global_mem_size[i];
-    *logfile << "\n CL_DEVICE_GLOBAL_MEM_SIZE: " << device_global_mem_size[i];
-    free(device_global_mem_size);
-
-    err = clGetDeviceInfo(device_id[i],
-            CL_DEVICE_LOCAL_MEM_SIZE,
-            0,
-            0,
-            &size);
-
-    if (err != CL_SUCCESS) {
-        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    }
-
-    cl_ulong *device_local_mem_size = (cl_ulong *) malloc(size * sizeof (cl_ulong));
-
-    err = clGetDeviceInfo(device_id[i],
-            CL_DEVICE_LOCAL_MEM_SIZE,
-            size,
-            device_local_mem_size,
-            NULL);
-
-    if (err != CL_SUCCESS) {
-        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    }
-
-    cout << "\n CL_DEVICE_LOCAL_MEM_SIZE: " << device_local_mem_size[i];
-    *logfile << "\n CL_DEVICE_LOCAL_MEM_SIZE: " << device_local_mem_size[i];
-    free(device_local_mem_size);
-
-    err = clGetDeviceInfo(device_id[i],
-            CL_DEVICE_LOCAL_MEM_TYPE,
-            0,
-            0,
-            &size);
-
-    if (err != CL_SUCCESS) {
-        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    }
-
-    cl_device_local_mem_type *device_local_mem_type = (cl_device_local_mem_type *) malloc(size * sizeof (cl_device_local_mem_type));
-
-    err = clGetDeviceInfo(device_id[i],
-            CL_DEVICE_LOCAL_MEM_TYPE,
-            size,
-            device_local_mem_type,
-            NULL);
-
-    if (err != CL_SUCCESS) {
-        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    }
-
-    cout << "\n CL_DEVICE_LOCAL_MEM_SIZE: " << device_local_mem_type[i];
-    *logfile << "\n CL_DEVICE_LOCAL_MEM_SIZE: " << device_local_mem_type[i];
-    free(device_local_mem_type);
-
-    err = clGetDeviceInfo(device_id[i],
-            CL_DEVICE_MAX_CLOCK_FREQUENCY,
-            0,
-            0,
-            &size);
-
-    if (err != CL_SUCCESS) {
-        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    }
-
-    cl_uint *device_max_clock_freq = (cl_uint *) malloc(size * sizeof (cl_uint));
-
-    err = clGetDeviceInfo(device_id[i],
-            CL_DEVICE_MAX_CLOCK_FREQUENCY,
-            size,
-            device_max_clock_freq,
-            NULL);
-
-    if (err != CL_SUCCESS) {
-        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    }
-
-    cout << "\n CL_DEVICE_MAX_CLOCK_FREQUENCY: " << device_max_clock_freq[i];
-    *logfile << "\n CL_DEVICE_MAX_CLOCK_FREQUENCY: " << device_max_clock_freq[i];
-    free(device_max_clock_freq);
-
-    /*The number of parallel compute cores on the OpenCL device. The minimum value is 1.*/
-    err = clGetDeviceInfo(device_id[i],
-            CL_DEVICE_MAX_COMPUTE_UNITS,
-            0,
-            0,
-            &size);
-
-    if (err != CL_SUCCESS) {
-        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    }
-
-    cl_uint *device_max_compute_units = (cl_uint *) malloc(size * sizeof (cl_uint));
-
-    err = clGetDeviceInfo(device_id[i],
-            CL_DEVICE_MAX_COMPUTE_UNITS,
-            size,
-            device_max_compute_units,
-            NULL);
-
-    if (err != CL_SUCCESS) {
-        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    }
-
-    cout << "\n CL_DEVICE_MAX_COMPUTE_UNITS: " << device_max_compute_units[i];
-    *logfile << "\n CL_DEVICE_MAX_COMPUTE_UNITS: " << device_max_compute_units[i];
-    free(device_max_compute_units);
-
-    /*Max size of memory object allocation in bytes. 
-     * The minimum value is max 
-     * (1/4th of CL_DEVICE_GLOBAL_MEM_SIZE, 128*1024*1024)*/
-    err = clGetDeviceInfo(device_id[i],
-            CL_DEVICE_MAX_MEM_ALLOC_SIZE,
-            0,
-            0,
-            &size);
-
-    if (err != CL_SUCCESS) {
-        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    }
-
-    cl_ulong *device_max_mem_alloc_size = (cl_ulong *) malloc(size * sizeof (cl_ulong));
-
-    err = clGetDeviceInfo(device_id[i],
-            CL_DEVICE_MAX_MEM_ALLOC_SIZE,
-            size,
-            device_max_mem_alloc_size,
-            NULL);
-
-    if (err != CL_SUCCESS) {
-        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    }
-
-    cout << "\n CL_DEVICE_MAX_MEM_ALLOC_SIZE: " << device_max_mem_alloc_size[i];
-    *logfile << "\n CL_DEVICE_MAX_MEM_ALLOC_SIZE: " << device_max_mem_alloc_size[i];
-    free(device_max_mem_alloc_size);
-
-    /*Maximum number of work-items in a work-group executing a kernel 
-     *using the data parallel execution model. 
-     * (Refer to clEnqueueNDRangeKernel). 
-     * The minimum value is 1*/
-    err = clGetDeviceInfo(device_id[i],
-            CL_DEVICE_MAX_WORK_GROUP_SIZE,
-            0,
-            0,
-            &size);
-
-    if (err != CL_SUCCESS) {
-        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    }
-
-    device_max_work_group_size = (size_t *) malloc(size * sizeof (size_t));
-
-    err = clGetDeviceInfo(device_id[i],
-            CL_DEVICE_MAX_WORK_GROUP_SIZE,
-            size,
-            device_max_work_group_size,
-            NULL);
-
-    if (err != CL_SUCCESS) {
-        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    }
-
-    cout << "\n CL_DEVICE_MAX_WORK_GROUP_SIZE: " << device_max_work_group_size[i];
-    *logfile << "\n CL_DEVICE_MAX_WORK_GROUP_SIZE: " << device_max_work_group_size[i];
-    //free(device_max_work_group_size) is in cleanup function
-
-    /*
-     * Maximum dimensions that specify the global and local work-item IDs 
-     * used by the data parallel execution model. 
-     * (Refer to clEnqueueNDRangeKernel). The minimum value is 3.
-     */
-    err = clGetDeviceInfo(device_id[i],
-            CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS,
-            0,
-            0,
-            &size);
-
-    if (err != CL_SUCCESS) {
-        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    }
-
-    cl_uint *device_max_work_item_dim = (cl_uint *) malloc(size * sizeof (cl_uint));
-
-    err = clGetDeviceInfo(device_id[i],
-            CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS,
-            size,
-            device_max_work_item_dim,
-            NULL);
-
-    if (err != CL_SUCCESS) {
-        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    }
-
-    cout << "\n CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS: " << device_max_work_item_dim[i];
-    *logfile << "\n CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS: " << device_max_work_item_dim[i];
-    free(device_max_work_item_dim);
-
-    /*DEVICE NAME*/
-    err = clGetDeviceInfo(device_id[i],
-            CL_DEVICE_MAX_WORK_ITEM_SIZES,
-            0,
-            0,
-            &size);
-
-    if (err != CL_SUCCESS) {
-        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    }
-
-    size_t *device_max_work_items = (size_t *) malloc(size * sizeof (size_t));
-
-    err = clGetDeviceInfo(device_id[i],
-            CL_DEVICE_MAX_WORK_ITEM_SIZES,
-            size,
-            device_max_work_items,
-            NULL);
-
-    if (err != CL_SUCCESS) {
-        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    }
-
-    cout << "\n CL_DEVICE_MAX_WORK_ITEM_SIZES 1: " << device_max_work_items[0];
-    cout << "\n CL_DEVICE_MAX_WORK_ITEM_SIZES 2: " << device_max_work_items[1];
-    cout << "\n CL_DEVICE_MAX_WORK_ITEM_SIZES 3: " << device_max_work_items[2];
-    *logfile << "\n CL_DEVICE_MAX_WORK_ITEM_SIZES 1: " << device_max_work_items[0];
-    *logfile << "\n CL_DEVICE_MAX_WORK_ITEM_SIZES 2: " << device_max_work_items[1];
-    *logfile << "\n CL_DEVICE_MAX_WORK_ITEM_SIZES 3: " << device_max_work_items[2];
-    free(device_max_work_items);
+    cout << "\nCL_DRIVER_VERSION: " << string(driver_version);
+    *logfile << "\nCL_DRIVER_VERSION: " << string(driver_version);
+    free(driver_version);
 
     err = clGetDeviceInfo(device_id[i],
             CL_DEVICE_NAME,
@@ -519,8 +134,8 @@ void Knapsack::queryOclDeviceInfo(int i, fstream *logfile) {
         *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     }
 
-    cout << "\n CL_DEVICE_NAME: " << string(device_name);
-    *logfile << "\n CL_DEVICE_NAME: " << string(device_name);
+    cout << "\nCL_DEVICE_NAME: " << string(device_name);
+    *logfile << "\nCL_DEVICE_NAME: " << string(device_name);
     free(device_name);
 
     err = clGetDeviceInfo(device_id[i],
@@ -547,8 +162,8 @@ void Knapsack::queryOclDeviceInfo(int i, fstream *logfile) {
         *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     }
 
-    cout << "\n CL_DEVICE_TYPE: ";
-    *logfile << "\n CL_DEVICE_TYPE: ";
+    cout << "\nCL_DEVICE_TYPE: ";
+    *logfile << "\nCL_DEVICE_TYPE: ";
     switch (*device_type) {
         case(CL_DEVICE_TYPE_GPU): cout << "CL_DEVICE_TYPE_GPU";
             *logfile << "CL_DEVICE_TYPE_GPU";
@@ -582,8 +197,8 @@ void Knapsack::queryOclDeviceInfo(int i, fstream *logfile) {
             device_vendor,
             NULL);
 
-    cout << "\n CL_DEVICE_VENDOR: " << string(device_vendor);
-    *logfile << "\n CL_DEVICE_VENDOR: " << string(device_vendor);
+    cout << "\nCL_DEVICE_VENDOR: " << string(device_vendor);
+    *logfile << "\nCL_DEVICE_VENDOR: " << string(device_vendor);
     free(device_vendor);
 
     err = clGetDeviceInfo(device_id[i],
@@ -610,12 +225,13 @@ void Knapsack::queryOclDeviceInfo(int i, fstream *logfile) {
         *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     }
 
-    cout << "\n CL_DEVICE_VERSION: " << string(device_version);
-    *logfile << "\n CL_DEVICE_VERSION: " << string(device_version);
+    cout << "\nCL_DEVICE_VERSION: " << string(device_version);
+    *logfile << "\nCL_DEVICE_VERSION: " << string(device_version);
     free(device_version);
 
+
     err = clGetDeviceInfo(device_id[i],
-            CL_DRIVER_VERSION,
+            CL_DEVICE_GLOBAL_MEM_SIZE,
             0,
             0,
             &size);
@@ -625,12 +241,12 @@ void Knapsack::queryOclDeviceInfo(int i, fstream *logfile) {
         *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     }
 
-    char *driver_version = (char *) malloc(size * sizeof (char));
+    cl_ulong *device_global_mem_size = (cl_ulong *) malloc(size * sizeof (cl_ulong));
 
     err = clGetDeviceInfo(device_id[i],
-            CL_DRIVER_VERSION,
+            CL_DEVICE_GLOBAL_MEM_SIZE,
             size,
-            driver_version,
+            device_global_mem_size,
             NULL);
 
     if (err != CL_SUCCESS) {
@@ -638,9 +254,236 @@ void Knapsack::queryOclDeviceInfo(int i, fstream *logfile) {
         *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     }
 
-    cout << "\n CL_DRIVER_VERSION: " << string(driver_version);
-    *logfile << "\n CL_DRIVER_VERSION: " << string(driver_version);
-    free(driver_version);
+    cout << "\nCL_DEVICE_GLOBAL_MEM_SIZE: " << device_global_mem_size[i] / pow(10.0, 6) << " MB";
+    *logfile << "\nCL_DEVICE_GLOBAL_MEM_SIZE: " << device_global_mem_size[i] / pow(10.0, 6) << " MB";
+    free(device_global_mem_size);
+
+    err = clGetDeviceInfo(device_id[i],
+            CL_DEVICE_MAX_MEM_ALLOC_SIZE,
+            0,
+            0,
+            &size);
+
+    if (err != CL_SUCCESS) {
+        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+    }
+
+    cl_ulong *device_max_alloc_mem_size = (cl_ulong *) malloc(size * sizeof (cl_ulong));
+
+    err = clGetDeviceInfo(device_id[i],
+            CL_DEVICE_MAX_MEM_ALLOC_SIZE,
+            size,
+            device_max_alloc_mem_size,
+            NULL);
+
+    if (err != CL_SUCCESS) {
+        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+    }
+
+    cout << "\n!!!CL_DEVICE_MAX_MEMORY_ALLOCATION_SIZE: " << *device_max_alloc_mem_size / pow(10.0, 6) << " MB";
+    *logfile << "\n!!!CL_DEVICE_MEMORY_ALLOCATION_SIZE: " << *device_max_alloc_mem_size / pow(10.0, 6) << " MB";
+    free(device_max_alloc_mem_size);
+
+    err = clGetDeviceInfo(device_id[i],
+            CL_DEVICE_GLOBAL_MEM_CACHE_SIZE,
+            0,
+            0,
+            &size);
+
+    if (err != CL_SUCCESS) {
+        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+    }
+
+    cl_ulong *device_global_mem_cache_size = (cl_ulong *) malloc(size * sizeof (cl_ulong));
+
+    err = clGetDeviceInfo(device_id[i],
+            CL_DEVICE_GLOBAL_MEM_CACHE_SIZE,
+            size,
+            device_global_mem_cache_size,
+            NULL);
+
+    if (err != CL_SUCCESS) {
+        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+    }
+
+    cout << "\nCL_DEVICE_GLOBAL_MEM_CACHE_SIZE: " << device_global_mem_cache_size[i] / 1000 << "KB";
+    *logfile << "\nCL_DEVICE_GLOBAL_MEM_CACHE_SIZE: " << device_global_mem_cache_size[i] / 1000 << "KB";
+    free(device_global_mem_cache_size);
+
+    err = clGetDeviceInfo(device_id[i],
+            CL_DEVICE_LOCAL_MEM_SIZE,
+            0,
+            0,
+            &size);
+
+    if (err != CL_SUCCESS) {
+        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+    }
+
+    cl_ulong *device_local_mem_size = (cl_ulong *) malloc(size * sizeof (cl_ulong));
+
+    err = clGetDeviceInfo(device_id[i],
+            CL_DEVICE_LOCAL_MEM_SIZE,
+            size,
+            device_local_mem_size,
+            NULL);
+
+    if (err != CL_SUCCESS) {
+        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+    }
+
+    cout << "\nCL_DEVICE_LOCAL_MEM_SIZE: " << device_local_mem_size[i] / 1000 << "KB";
+    *logfile << "\nCL_DEVICE_LOCAL_MEM_SIZE: " << device_local_mem_size[i] / 1000 << "KB";
+    free(device_local_mem_size);
+
+    err = clGetDeviceInfo(device_id[i],
+            CL_DEVICE_LOCAL_MEM_TYPE,
+            0,
+            0,
+            &size);
+
+    if (err != CL_SUCCESS) {
+        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+    }
+
+    cl_device_local_mem_type *device_local_mem_type = (cl_device_local_mem_type *) malloc(size * sizeof (cl_device_local_mem_type));
+
+    err = clGetDeviceInfo(device_id[i],
+            CL_DEVICE_LOCAL_MEM_TYPE,
+            size,
+            device_local_mem_type,
+            NULL);
+
+    if (err != CL_SUCCESS) {
+        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+    }
+
+    cout << "\nCL_DEVICE_LOCAL_MEM_TYPE: ";
+    switch (device_local_mem_type[i]) {
+        case(CL_NONE):
+            cout << "CL_NONE";
+            *logfile << "CL_NONE";
+            break;
+        case(CL_READ_ONLY_CACHE):
+            cout << "CL_READ_ONLY_CACHE";
+            *logfile << "CL_NONE";
+            break;
+        case(CL_READ_WRITE_CACHE):
+            cout << "CL_READ_WRITE_CACHE";
+            *logfile << "CL_NONE";
+            break;
+        default:
+            cout << "UNKNOWN CACHE TYPE or ERROR";
+            *logfile << "UNKNOWN CACHE TYPE or ERROR";
+            break;
+    };
+
+    *logfile << "\nCL_DEVICE_LOCAL_MEM_TYPE: " << device_local_mem_type[i];
+    free(device_local_mem_type);
+
+
+    /*The number of parallel compute cores on the OpenCL device. The minimum value is 1.*/
+    err = clGetDeviceInfo(device_id[i],
+            CL_DEVICE_MAX_COMPUTE_UNITS,
+            0,
+            0,
+            &size);
+
+    if (err != CL_SUCCESS) {
+        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+    }
+
+    cl_uint *device_max_compute_units = (cl_uint *) malloc(size * sizeof (cl_uint));
+
+    err = clGetDeviceInfo(device_id[i],
+            CL_DEVICE_MAX_COMPUTE_UNITS,
+            size,
+            device_max_compute_units,
+            NULL);
+
+    if (err != CL_SUCCESS) {
+        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+    }
+
+    cout << "\nCL_DEVICE_MAX_COMPUTE_UNITS: " << device_max_compute_units[i];
+    *logfile << "\nCL_DEVICE_MAX_COMPUTE_UNITS: " << device_max_compute_units[i];
+    free(device_max_compute_units);
+
+    /*Maximum number of work-items in a work-group executing a kernel 
+     *using the data parallel execution model. 
+     * (Refer to clEnqueueNDRangeKernel). 
+     * The minimum value is 1*/
+    err = clGetDeviceInfo(device_id[i],
+            CL_DEVICE_MAX_WORK_GROUP_SIZE,
+            0,
+            0,
+            &size);
+
+    if (err != CL_SUCCESS) {
+        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+    }
+
+    device_max_work_group_size = (size_t *) malloc(size * sizeof (size_t));
+
+    err = clGetDeviceInfo(device_id[i],
+            CL_DEVICE_MAX_WORK_GROUP_SIZE,
+            size,
+            device_max_work_group_size,
+            NULL);
+
+    if (err != CL_SUCCESS) {
+        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+    }
+
+    cout << "\nCL_DEVICE_MAX_WORK_GROUP_SIZE: " << device_max_work_group_size[i];
+    *logfile << "\nCL_DEVICE_MAX_WORK_GROUP_SIZE: " << device_max_work_group_size[i];
+    //free(device_max_work_group_size) is in cleanup function
+
+
+    /*DEVICE NAME*/
+    err = clGetDeviceInfo(device_id[i],
+            CL_DEVICE_MAX_WORK_ITEM_SIZES,
+            0,
+            0,
+            &size);
+
+    if (err != CL_SUCCESS) {
+        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+    }
+
+    size_t *device_max_work_items = (size_t *) malloc(size * sizeof (size_t));
+
+    err = clGetDeviceInfo(device_id[i],
+            CL_DEVICE_MAX_WORK_ITEM_SIZES,
+            size,
+            device_max_work_items,
+            NULL);
+
+    if (err != CL_SUCCESS) {
+        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+    }
+
+    cout << "\nCL_DEVICE_MAX_WORK_ITEM_SIZES 1: " << device_max_work_items[0];
+    cout << "\nCL_DEVICE_MAX_WORK_ITEM_SIZES 2: " << device_max_work_items[1];
+    cout << "\nCL_DEVICE_MAX_WORK_ITEM_SIZES 3: " << device_max_work_items[2];
+    *logfile << "\nCL_DEVICE_MAX_WORK_ITEM_SIZES 1: " << device_max_work_items[0];
+    *logfile << "\nCL_DEVICE_MAX_WORK_ITEM_SIZES 2: " << device_max_work_items[1];
+    *logfile << "\nCL_DEVICE_MAX_WORK_ITEM_SIZES 3: " << device_max_work_items[2];
+    free(device_max_work_items);
 
 }
 
@@ -679,13 +522,14 @@ void Knapsack::createContextQueue(int i, fstream *logfile) {
 }
 
 void Knapsack::createProgramBuild(int i, fstream *logfile) {
+
     /*A program object in OpenCL encapsulates the program sources or 
      * a binary file*/
 
     string sourceKernel, line;
 
 
-    ofs.open("knapsack_toth.cl", ios_base::in); //..//OpenCL//Knapsack OpenCL//knapsack_toth.cl
+    ofs.open("..//OpenCL//Knapsack OpenCL//knapsack_toth.cl", ios_base::in); //..//OpenCL//Knapsack OpenCL//knapsack_toth.cl
     if (ofs.is_open()) {
         while (ofs.good()) {
             getline(ofs, line);
@@ -729,19 +573,23 @@ void Knapsack::createProgramBuild(int i, fstream *logfile) {
             NULL);
 
     if (err != CL_SUCCESS) {
-        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
         printf("Error building program\n");
-        char buffer[4096];
-        size_t length;
+        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+        *logfile << "Error building program\n";
+        char buffer[4096] = {""};
+        size_t length = 4096;
         clGetProgramBuildInfo(
                 program,
                 device_id[i],
                 CL_PROGRAM_BUILD_LOG,
-                sizeof (buffer),
+                4096 * sizeof (buffer),
                 buffer,
-                &length
+                0
                 );
-        printf("%s\n", buffer);
+        cout << string(buffer) << "\n";
+        *logfile << string(buffer) << "\n";
+        logfile->close();
+
         exit(1);
     }
     free(x);
@@ -757,9 +605,9 @@ void Knapsack::createMemObjects(fstream *logfile) {
 
     f0_mem = clCreateBuffer(
             context, // a valid context
-            CL_MEM_READ_WRITE, // bit-field flag to specify;  the usage of memory
+            CL_MEM_USE_HOST_PTR, // bit-field flag to specify;  the usage of memory
             sizeof (int)*(capacity + 1), // size in bytes of the buffer to allocated
-            NULL, // pointer to buffer data to be copied from host
+            f0, // pointer to buffer data to be copied from host
             &err // returned error code
             );
     if (err != CL_SUCCESS) {
@@ -769,9 +617,9 @@ void Knapsack::createMemObjects(fstream *logfile) {
 
     f1_mem = clCreateBuffer(
             context, // a valid context
-            CL_MEM_READ_WRITE, // bit-field flag to specify
+            CL_MEM_USE_HOST_PTR, // bit-field flag to specify
             sizeof (int)*(capacity + 1), // size in bytes of the buffer to allocated
-            NULL, // pointer to buffer data to be copied from host
+            f1, // pointer to buffer data to be copied from host
             &err // returned error code
             );
     if (err != CL_SUCCESS) {
@@ -781,9 +629,9 @@ void Knapsack::createMemObjects(fstream *logfile) {
 
     m_d_mem = clCreateBuffer(
             context, // a valid context
-            CL_MEM_READ_WRITE, // bit-field flag to specify
+            CL_MEM_USE_HOST_PTR, // bit-field flag to specify
             sizeof (int)*capacity, // size in bytes of the buffer to allocated
-            NULL, // pointer to buffer data to be copied from host
+            m_d, // pointer to buffer data to be copied from host
             &err // returned error code
             );
 
@@ -796,50 +644,6 @@ void Knapsack::createMemObjects(fstream *logfile) {
      *This functional is typically used to provide data for the kernel processing. 
      */
 
-    err = clEnqueueWriteBuffer(
-            queue, //valid command queue 
-            f0_mem, //memory buffer object to write to
-            CL_TRUE, // indicate blocking write
-            0, //the offset in the buffer object to write to
-            sizeof (int)*(capacity + 1), //size in bytes of data to write to
-            f0, //pointer to buffer in host mem to read data from
-            0, //number of events in the event list 
-            NULL, //list of events that needs to complete before this executes
-            NULL); //event object to return on completion
-    if (err != CL_SUCCESS) {
-        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    }
-
-    err = clEnqueueWriteBuffer(
-            queue, //valid command queue 
-            f1_mem, //memory buffer object to write to
-            CL_TRUE, // indicate blocking write
-            0, //the offset in the buffer object to write to
-            sizeof (int)*(capacity + 1), //size in bytes of data to write to
-            f1, //pointer to buffer in host mem to read data from
-            0, //number of events in the event list 
-            NULL, //list of events that needs to complete before this executes
-            NULL); //event object to return on completion
-    if (err != CL_SUCCESS) {
-        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    }
-
-    err = clEnqueueWriteBuffer(
-            queue, //valid command queue 
-            m_d_mem, //memory buffer object to write to
-            CL_TRUE, // indicate blocking write
-            0, //the offset in the buffer object to write to
-            sizeof (int)*capacity, //size in bytes of data to write to
-            m_d, //pointer to buffer in host mem to read data from
-            0, //number of events in the event list 
-            NULL, //list of events that needs to complete before this executes
-            NULL); //event object to return on completion
-    if (err != CL_SUCCESS) {
-        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    }
 
 }
 
@@ -1001,12 +805,11 @@ void Knapsack::pari(int weightk, int valuek, int i, fstream* logfile) {
         *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     }
 
-    double run_time = (double) (end_time - start_time) * pow(10, -6); //time in ms
+    run_time += (double) (end_time - start_time) * pow(10, -6); //time in ms
 
-    //cout << "Profiling Info: " << run_time << endl;
-    *logfile << "Profiling Info: " << run_time << endl;
-
-    readback(f1_mem, f1, logfile);
+    /*for (int i = 0; i < capacity + 1; i++)
+        cout << f1[i] << "\n";*/
+    //readback(f1_mem, f1, logfile);
 
 }
 
@@ -1082,12 +885,12 @@ void Knapsack::dispari(int weightk, int valuek, int i, fstream* logfile) {
         *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     }
 
-    double run_time = (double) (end_time - start_time) * pow(10, -6); //time in ms
+    /*for (int i = 0; i < capacity + 1; i++)
+        cout << f0[i] << " f1\n";*/
 
-    //cout << "Profiling Info: " << run_time << endl;
-    *logfile << "Profiling Info: " << run_time << endl;
+    run_time += (double) (end_time - start_time) * pow(10, -6); //time in ms
 
-    readback(f0_mem, f0, logfile);
+    //readback(f0_mem, f0, logfile);
 
 }
 
@@ -1130,6 +933,86 @@ void Knapsack::readback(cl_mem &output_mem, int* output, fstream *logfile) {
     }
 }
 
+Knapsack::Knapsack(TestData& t) {
+
+    numelem = t.getNumelem();
+    sumWeight = t.getSum();
+    capacity = t.getCapacity();
+    value = (int *) calloc(numelem, sizeof (int));
+    weight = (int *) calloc(numelem, sizeof (int));
+
+    memcpy(value, t.getValue(), numelem);
+    memcpy(weight, t.getWeight(), numelem);
+    f1 = (int *) calloc((capacity + 1), sizeof (int)); //f[capacity +1]
+    f0 = (int *) calloc((capacity + 1), sizeof (int)); //f[0, ..., capacity]
+    M = (int *) calloc(numelem * capacity, sizeof (int)); //M[numelem][capacity]
+    if(M==NULL) cout << "NOT ENOUGH AVAILABLE SPACE!!!! TRY WITH LESS ELEMENTS\n";
+    m_d = (int *) calloc(capacity, sizeof (int)); //m_d[1, ..., capacity] this a row of M matrix
+    global_work_items = (size_t *) calloc(1, sizeof (size_t));
+    local_work_items = (size_t *) calloc(1, sizeof (size_t));
+
+}
+
+void Knapsack::executeComputation(int i, fstream *logfile) {
+    int sumK = sumWeight;
+    Timer timer;
+    Chrono chrono;
+    timer.start();
+    chrono.startChrono();
+    run_time = 0;
+    for (int k = 0; k < numelem; k++) {
+
+        sumK = sumK - weight[k];
+        cmax = 0;
+        cmax = max(capacity - sumK, weight[k]);
+        *global_work_items = (size_t) (capacity - cmax + 1);
+        *local_work_items = getLocalWorkItems(*global_work_items, *device_max_work_group_size);
+        //cout << "global_work_items: " << *global_work_items << endl;
+        //cout << "local_work_items: " << *local_work_items << endl;
+        *logfile << "global_work_items: " << *global_work_items << endl;
+        *logfile << "local_work_items: " << *local_work_items << endl;
+
+        //cout << endl;
+        *logfile << endl;
+        createMemObjects(logfile);
+
+        if (k % 2 == 0) {
+            pari(weight[k], value[k], i, logfile);
+
+        } else {
+            dispari(weight[k], value[k], i, logfile);
+        }
+
+        for (int i = 0; i < capacity; i++) {
+            int x = *(m_d + i);
+        }
+        //segmentation fault can be caused because of max memory limit(ram)
+        memcpy(M + k*capacity, m_d, sizeof(int)*capacity);
+
+        for (int i = 0; i < capacity; i++) {
+            *(m_d + i) = 0;
+        }
+        
+        err = clReleaseKernel(kernel);
+        clReleaseMemObject(f1_mem);
+        clReleaseMemObject(f0_mem);
+        clReleaseMemObject(m_d_mem);
+
+        if (err != CL_SUCCESS) {
+            cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+        }
+        
+    }
+    timer.stop();
+    chrono.stopChrono();
+    cout << "Total time with Timer: " << timer.getTime() << endl;
+    *logfile << "Total time with Timer: " << timer.getTime() << endl;
+    cout << "Total time with Chrono: " << chrono.getTimeChrono() << endl;
+    *logfile << "Total time with Chrono: " << chrono.getTimeChrono() << endl;
+    timer.reset();
+
+}
+
 void Knapsack::printResults(fstream *logfile) {
 
     cout << "\nPRINTOUT OF THE RESULTS: " << endl;
@@ -1164,7 +1047,7 @@ void Knapsack::printResults(fstream *logfile) {
         }
     }*/
 
-    cout << "SumWeight: " << sumWeight << "\tCapacity: " << capacity << "\n";
+    cout << "SumWeight: " << sumWeight << "\t Capacity: " << capacity << "\n";
     cout << "\nKnapsack's worth: ";
     *logfile << "\nKnapsack's worth: ";
     if (numelem % 2 == 0) {
@@ -1183,11 +1066,11 @@ void Knapsack::printResults(fstream *logfile) {
     for (int item = numelem - 1; item > -1; item--) {
         for (int c = cap - 1; c > -1; c--) {
             if (M[item * (capacity) + c] != 0) {
-                cout << "Value: " << value[item];
-                cout << "\tWeight: " << weight[item] << endl;
+                cout << "Value " << item << ": " << value[item];
+                cout << "\t" << "Weight " << item << ": " << weight[item] << endl;
                 capacita += weight[item];
                 *logfile << "Value: " << value[item];
-                *logfile << "\tWeight: " << weight[item] << endl;
+                *logfile << "\t" << "Weight: " << weight[item] << endl;
                 cap = cap - weight[item];
                 break;
             } else if (M[item * (capacity) + c] == 0) {
@@ -1203,78 +1086,14 @@ void Knapsack::printResults(fstream *logfile) {
         *(f0 + i) = 0;
     }
 
+    cout << "Profiling Info: " << run_time << endl;
+    *logfile << "Profiling Info: " << run_time << endl;
+
 
     cout << "*************************************************" << endl;
     cout << "END OF THE PRINTOUT" << endl;
     *logfile << "*************************************************" << endl;
     *logfile << "END OF THE PRINTOUT" << endl;
-
-}
-
-Knapsack::Knapsack(TestData& t) {
-
-    numelem = t.getNumelem();
-    sumWeight = t.getSum();
-    capacity = t.getCapacity();
-    value = (int *) calloc(numelem, sizeof (int));
-    weight = (int *) calloc(numelem, sizeof (int));
-
-    memcpy(value, t.getValue(), numelem);
-    memcpy(weight, t.getWeight(), numelem);
-    f1 = (int *) calloc((capacity + 1), sizeof (int)); //f[capacity +1]
-    f0 = (int *) calloc((capacity + 1), sizeof (int)); //f[0, ..., capacity]
-    M = (int *) calloc(numelem * capacity, sizeof (int)); //M[numelem][capacity]
-    m_d = (int *) calloc((capacity), sizeof (int)); //m_d[1, ..., capacity] this a row of M matrix
-    global_work_items = (size_t *) calloc(0, sizeof (size_t));
-    local_work_items = (size_t *) calloc(0, sizeof (size_t));
-
-}
-
-void Knapsack::executeComputation(int i, fstream *logfile) {
-    int sumK = sumWeight;
-    Timer timer;
-    Chrono chrono;
-    timer.start();
-    chrono.startChrono();
-    for (int k = 0; k < numelem; k++) {
-
-        sumK = sumK - weight[k];
-        cmax = 0;
-        cmax = max(capacity - sumK, weight[k]);
-        *global_work_items = (size_t) (capacity - cmax + 1);
-        *local_work_items = getLocalWorkItems(*global_work_items, *device_max_work_group_size);
-        //cout << "global_work_items: " << *global_work_items << endl;
-        //cout << "local_work_items: " << *local_work_items << endl;
-        *logfile << "global_work_items: " << *global_work_items << endl;
-        *logfile << "local_work_items: " << *local_work_items << endl;
-
-        //cout << endl;
-        *logfile << endl;
-
-        if (k % 2 == 0) {
-            pari(weight[k], value[k], i, logfile);
-            
-        } else {
-            dispari(weight[k], value[k], i, logfile);
-        }
-        err = clReleaseKernel(kernel);
-        if (err != CL_SUCCESS) {
-            cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-        }
-
-        memcpy(M + k*capacity, m_d, sizeof (int)*capacity);
-        for (int i = 0; i < capacity; i++) {
-            *(m_d + i) = 0;
-        }
-
-    }
-    timer.stop();
-    chrono.stopChrono();
-    cout << "Total time with Timer: " << timer.getTime() << endl;
-    *logfile << "Total time with Timer: " << timer.getTime() << endl;
-    cout << "Total time with Chrono: " << chrono.getTimeChrono() << endl;
-    *logfile << "Total time with Chrono: " << chrono.getTimeChrono() << endl;
-    timer.reset();
 
 }
 
@@ -1304,19 +1123,19 @@ int Knapsack::getNumDevices() {
 }
 
 Knapsack::~Knapsack() {
-
-    err = clReleaseMemObject(f0_mem);
-    if (err != CL_SUCCESS) {
-        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    }
-    err = clReleaseMemObject(f1_mem);
-    if (err != CL_SUCCESS) {
-        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    }
-    err = clReleaseMemObject(m_d_mem);
-    if (err != CL_SUCCESS) {
-        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    }
+    /*
+        err = clReleaseMemObject(f0_mem);
+        if (err != CL_SUCCESS) {
+            cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+        }
+        err = clReleaseMemObject(f1_mem);
+        if (err != CL_SUCCESS) {
+            cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+        }
+        err = clReleaseMemObject(m_d_mem);
+        if (err != CL_SUCCESS) {
+            cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+        }*/
 
     err = clReleaseProgram(program);
     if (err != CL_SUCCESS) {
