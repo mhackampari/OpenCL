@@ -38,6 +38,7 @@ int main(int argc, char** argv) {
         //6. Copy memory data to the device as needed. Create memory objects on the host or on the device.
        ksack.createMemObjects(&logfile);
         //7. Create Kernels
+       ksack.createKernel();
         //8. Provide arguments for the kernels.
        // ksack.createKernel();
         //9. Submit the kernels to the command queue for execution.
