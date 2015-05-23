@@ -529,7 +529,7 @@ void Knapsack::createProgramBuild(int i, fstream *logfile) {
     string sourceKernel, line;
 
 
-    ofs.open("..//OpenCL//Knapsack OpenCL//knapsack_toth.cl", ios_base::in); //..//OpenCL//Knapsack OpenCL//knapsack_toth.cl
+    ofs.open("knapsack_toth.cl", ios_base::in); //..//OpenCL//Knapsack OpenCL//knapsack_toth.cl
     if (ofs.is_open()) {
         while (ofs.good()) {
             getline(ofs, line);
@@ -605,9 +605,9 @@ void Knapsack::createMemObjects(fstream *logfile) {
 
     f0_mem = clCreateBuffer(
             context, // a valid context
-            CL_MEM_USE_HOST_PTR, // bit-field flag to specify;  the usage of memory
+            CL_MEM_READ_WRITE, // bit-field flag to specify;  the usage of memory
             sizeof (int)*(capacity + 1), // size in bytes of the buffer to allocated
-            f0, // pointer to buffer data to be copied from host
+            NULL, // pointer to buffer data to be copied from host
             &err // returned error code
             );
     if (err != CL_SUCCESS) {
@@ -617,9 +617,9 @@ void Knapsack::createMemObjects(fstream *logfile) {
 
     f1_mem = clCreateBuffer(
             context, // a valid context
-            CL_MEM_USE_HOST_PTR, // bit-field flag to specify
+            CL_MEM_READ_WRITE, // bit-field flag to specify
             sizeof (int)*(capacity + 1), // size in bytes of the buffer to allocated
-            f1, // pointer to buffer data to be copied from host
+            NULL, // pointer to buffer data to be copied from host
             &err // returned error code
             );
     if (err != CL_SUCCESS) {
@@ -629,9 +629,9 @@ void Knapsack::createMemObjects(fstream *logfile) {
 
     m_d_mem = clCreateBuffer(
             context, // a valid context
-            CL_MEM_USE_HOST_PTR, // bit-field flag to specify
+            CL_MEM_READ_WRITE, // bit-field flag to specify
             sizeof (int)*capacity, // size in bytes of the buffer to allocated
-            m_d, // pointer to buffer data to be copied from host
+            NULL, // pointer to buffer data to be copied from host
             &err // returned error code
             );
 
@@ -643,7 +643,39 @@ void Knapsack::createMemObjects(fstream *logfile) {
     /*Enqueues a command to write data from host to memory to a buffer object.
      *This functional is typically used to provide data for the kernel processing. 
      */
-
+    
+    err = clEnqueueWriteBuffer(queue,
+                        f0_mem,
+                        CL_TRUE,
+                        0,
+                        sizeof(capacity)*(capacity+1),
+                        f0,
+                        0,
+                        NULL,
+                        NULL);
+    checkError(err);
+    
+    err = clEnqueueWriteBuffer(queue,
+                        f1_mem,
+                        CL_TRUE,
+                        0,
+                        sizeof(capacity)*(capacity+1),
+                        f1,
+                        0,
+                        NULL,
+                        NULL);
+    checkError(err);
+    
+    err = clEnqueueWriteBuffer(queue,
+                        m_d_mem,
+                        CL_TRUE,
+                        0,
+                        sizeof(capacity)*(capacity),
+                        m_d,
+                        0,
+                        NULL,
+                        NULL);
+    checkError(err);
 
 }
 
@@ -743,7 +775,8 @@ void Knapsack::pari(int weightk, int valuek, int i, fstream* logfile) {
      * N-dimensional problem space. In addition, each work-item is executed 
      * only with its assigned data. Thus, it is important specify to OpenCL 
      * how many work-items are needed to process all data.*/
-
+    
+    //http://stackoverflow.com/questions/3957125/questions-about-global-and-local-work-size
     err = clGetKernelWorkGroupInfo(kernel,
             device_id[i],
             CL_KERNEL_WORK_GROUP_SIZE,
@@ -809,7 +842,7 @@ void Knapsack::pari(int weightk, int valuek, int i, fstream* logfile) {
 
     /*for (int i = 0; i < capacity + 1; i++)
         cout << f1[i] << "\n";*/
-    //readback(f1_mem, f1, logfile);
+    readback(f1_mem, f1, logfile);
 
 }
 
@@ -890,7 +923,7 @@ void Knapsack::dispari(int weightk, int valuek, int i, fstream* logfile) {
 
     run_time += (double) (end_time - start_time) * pow(10, -6); //time in ms
 
-    //readback(f0_mem, f0, logfile);
+    readback(f0_mem, f0, logfile);
 
 }
 
@@ -940,9 +973,8 @@ Knapsack::Knapsack(TestData& t) {
     capacity = t.getCapacity();
     value = (int *) calloc(numelem, sizeof (int));
     weight = (int *) calloc(numelem, sizeof (int));
-
-    memcpy(value, t.getValue(), numelem);
-    memcpy(weight, t.getWeight(), numelem);
+    memcpy(value, t.getValue(), sizeof(int)*numelem);
+    memcpy(weight, t.getWeight(), sizeof(int)*numelem);
     f1 = (int *) calloc((capacity + 1), sizeof (int)); //f[capacity +1]
     f0 = (int *) calloc((capacity + 1), sizeof (int)); //f[0, ..., capacity]
     M = (int *) calloc(numelem * capacity, sizeof (int)); //M[numelem][capacity]
@@ -983,9 +1015,6 @@ void Knapsack::executeComputation(int i, fstream *logfile) {
             dispari(weight[k], value[k], i, logfile);
         }
 
-        for (int i = 0; i < capacity; i++) {
-            int x = *(m_d + i);
-        }
         //segmentation fault can be caused because of max memory limit(ram)
         memcpy(M + k*capacity, m_d, sizeof(int)*capacity);
 
@@ -1020,9 +1049,9 @@ void Knapsack::printResults(fstream *logfile) {
     cout << "*************************************************" << endl;
     *logfile << "*************************************************" << endl;
 
-
-    /* cout << "Evolution of the Knapsack worth F[x]: ";
-     *logfile << "Evolution of the Knapsack worth F[x]: ";
+/*
+     cout << "Evolution of the Knapsack worth F[x]: ";
+     //*logfile << "Evolution of the Knapsack worth F[x]: ";
     for (int i = 0; i < capacity + 1; i++) {
         if (numelem % 2 == 0) {
             cout << f0[i] << " ";
@@ -1032,18 +1061,18 @@ void Knapsack::printResults(fstream *logfile) {
      *logfile << *(f1 + i) << " ";
         }
 
-    }*/
+    }
 
     cout << endl;
-    /*/cout << "Matrix of decisions M[items][capacity]: " << endl;
+    cout << "Matrix of decisions M[items][capacity]: " << endl;
      *logfile << endl;
      *logfile << "Matrix of decisions M[items][capacity]: " << endl;
     for (int i = 0; i < numelem * capacity; i++) {
-        //cout << *(M + i) << "; ";
+        cout << *(M + i) << "; ";
      *logfile << *(M + i) << "; ";
         if ((i + 1) % (capacity) == 0) {
-            //cout << endl;
-     *logfile << endl;
+            cout << endl;
+    // *logfile << endl;
         }
     }*/
 
@@ -1165,6 +1194,12 @@ Knapsack::~Knapsack() {
     free(local_work_items);
 
     cout << "\n!!!Knapsack Class Has Been Destroyed!!!\n";
+}
+
+void Knapsack::checkError(cl_int e){
+    if (err != CL_SUCCESS) {
+        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
+    }
 }
 
 string Knapsack::getErrorCode(int e) {

@@ -38,12 +38,9 @@ TestData::TestData(int numel) {
     uniform_int_distribution<int> unifdist(1,numelem);
     
     for (int i = 0; i < numelem; i++) {
-        weight[i] = i+1;//rand()%numelem + 1;//unifdist(random_engine); 
+        weight[i] = rand()%numelem + 1;//unifdist(random_engine); 
         sum += weight[i];
         value[i] = weight[i]+rand()%numelem + 1; //+ 50;
-        
-        cout << "weight[i]" << weight[i] <<"\t";
-        cout << "value[i]" << value[i] <<"\n";
     }
 
     capacity = sum / 2;
