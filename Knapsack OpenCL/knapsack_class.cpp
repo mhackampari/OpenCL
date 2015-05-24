@@ -708,7 +708,7 @@ void Knapsack::writeBufferToDevice(cl_mem& in, cl_mem& out, int* input, int* out
 
 }
 
-void Knapsack::setKernelArgs(cl_mem &input, cl_mem &output, int weightk, int valuek) {
+void Knapsack::setKernelArgs(cl_mem &input, cl_mem &output, int weightk, int valuek, int total_elements) {
 
     err = clSetKernelArg(
             kernel, //valid kernel object
@@ -757,6 +757,14 @@ void Knapsack::setKernelArgs(cl_mem &input, cl_mem &output, int weightk, int val
             &valuek //a pointer of data used as the argument
             );
     checkError(err);
+    
+    err = clSetKernelArg(
+            kernel, //valid kernel object
+            6, //the specific argument of a kernel
+            sizeof (int), //the size of the argument data
+            &total_elements //a pointer of data used as the argument
+            );
+    checkError(err);
 
 }
 
@@ -774,7 +782,7 @@ void Knapsack::even(int weightk, int valuek, int i, fstream* logfile) {
      * cannot be assigned arbitrarily; the provided OpenCL function clGetKernelWorkGroupInfo()
      * must be used to query the group size info of a device.
      */
-    
+
     err = clEnqueueNDRangeKernel(
             queue, // valid command queue
             kernel, // valid kernel object
@@ -790,7 +798,7 @@ void Knapsack::even(int weightk, int valuek, int i, fstream* logfile) {
 
     err = clFinish(queue);
     checkError(err);
-    
+
     err = clGetEventProfilingInfo(prof_event, CL_PROFILING_COMMAND_QUEUED, sizeof (cl_ulong), &start_time, NULL);
     checkError(err);
 
@@ -827,7 +835,7 @@ void Knapsack::odd(int weightk, int valuek, int i, fstream* logfile) {
             NULL, // list of events that needs to complete before this executes
             &prof_event // event object to return on completion
             );
-   checkError(err);
+    checkError(err);
 
     err = clFinish(queue);
     checkError(err);
@@ -912,10 +920,12 @@ void Knapsack::executeComputation(int i, fstream *logfile) {
         sumK = sumK - weight[k];
         cmax = 0;
         cmax = max(capacity - sumK, weight[k]);
-        *global_work_items = (size_t) (capacity - cmax + 1);
-        *local_work_items = getLocalWorkItems(*global_work_items, *device_max_work_group_size, i);
-        //cout << "global_work_items: " << *global_work_items << endl;
-        //cout << "local_work_items: " << *local_work_items << endl;
+        total_elements = (size_t) (capacity - cmax + 1);
+        *global_work_items = total_elements;
+        *local_work_items = getLocalWorkItems(total_elements, *device_max_work_group_size, i);
+        //*local_work_items = 256;
+        *global_work_items = getGlobalWorkItems(total_elements, *local_work_items, i);
+        
         *logfile << "global_work_items: " << *global_work_items << endl;
         *logfile << "local_work_items: " << *local_work_items << endl;
 
@@ -925,13 +935,13 @@ void Knapsack::executeComputation(int i, fstream *logfile) {
 
         if (k % 2 == 0) {
             writeBufferToDevice(in_even_mem, out_even_mem, f0, f1);
-            setKernelArgs(in_even_mem, out_even_mem, weight[k], value[k]);
+            setKernelArgs(in_even_mem, out_even_mem, weight[k], value[k], (int)total_elements);
             even(weight[k], value[k], i, logfile);
             readBufferFromDevice(out_even_mem, f1, logfile);
 
         } else {
             writeBufferToDevice(in_odd_mem, out_odd_mem, f1, f0);
-            setKernelArgs(in_odd_mem, out_odd_mem, weight[k], value[k]);
+            setKernelArgs(in_odd_mem, out_odd_mem, weight[k], value[k], (int)total_elements);
             odd(weight[k], value[k], i, logfile);
             readBufferFromDevice(out_odd_mem, f0, logfile);
         }
@@ -1038,8 +1048,10 @@ void Knapsack::printResults(fstream *logfile) {
 
 }
 
-size_t Knapsack::getLocalWorkItems(size_t globalThreads, size_t maxWorkItemSize, int i) {
-    
+//http://stackoverflow.com/questions/3957125/questions-about-global-and-local-work-size
+
+size_t Knapsack::getLocalWorkItems(size_t totalThreads, size_t localThreads, int i) {
+
     /*each kernel execution in OpenCL is called a work-item. 
      * OpenCL exploits parallel computation of the compute devices by having 
      * instances of the kernel execute on different portions of the 
@@ -1059,25 +1071,48 @@ size_t Knapsack::getLocalWorkItems(size_t globalThreads, size_t maxWorkItemSize,
     //cout << "\nCL_KERNEL_WORK_GROUP_SIZE: " << size << endl;
     //cout << "\nGLOBAL_WORK_GROUP_SIZE: " << *global_work_items << endl;
     //cout << "\nLOCAL_WORK_GROUP_SIZE: " << *local_work_items << endl;
-    
+
     /* Each kernel execution in OpenCL is called a work-item thus is important 
      * specify to OpenCL how many work-items are needed to process all data.
      * 
      */
-    if (maxWorkItemSize < globalThreads) {
-        if (globalThreads % maxWorkItemSize == 0) {
-            return maxWorkItemSize;
-        } else {
-            for (size_t i = maxWorkItemSize - 1; i > 0; --i) {
-                if (globalThreads % i == 0) {
-                    return i;
-                }
-            }
-        }
+    if (localThreads < totalThreads) {
+
+        return localThreads;
+
     } else {
-        return globalThreads;
+
+        return totalThreads;
+
     }
-    return SDK_SUCCESS;
+
+}
+
+size_t Knapsack::getGlobalWorkItems(size_t globalThreads, size_t localThreads, int i) {
+
+    /*each kernel execution in OpenCL is called a work-item. 
+     * OpenCL exploits parallel computation of the compute devices by having 
+     * instances of the kernel execute on different portions of the 
+     * N-dimensional problem space. In addition, each work-item is executed 
+     * only with its assigned data. Thus, it is important specify to OpenCL 
+     * how many work-items are needed to process all data.*/
+
+    /* Each kernel execution in OpenCL is called a work-item thus is important 
+     * specify to OpenCL how many work-items are needed to process all data.
+     * 
+     */
+
+    if (localThreads < globalThreads && globalThreads % localThreads != 0) {
+
+        //Workgroup should be full of threads to have max throughput
+        globalThreads = (globalThreads / localThreads + 1) * localThreads;
+
+    }
+
+    //cout << "\nGLOBAL_WORK_GROUP_SIZE: " << globalThreads << endl;
+    //cout << "\nLOCAL_WORK_GROUP_SIZE: " << localThreads << endl;
+
+    return globalThreads;
 }
 
 int Knapsack::getNumDevices() {
