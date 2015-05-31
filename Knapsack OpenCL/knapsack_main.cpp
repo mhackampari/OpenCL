@@ -14,7 +14,7 @@ int main(int argc, char** argv) {
     Chrono ch;
     Timer tm;
     //remember the limit of the 4gb allocated space
-    TestData test(1000);
+    TestData test(5);
     tm.start();
     ch.startChrono();
     

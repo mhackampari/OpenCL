@@ -42,7 +42,7 @@ class Knapsack {
     cl_context context;
     cl_command_queue queue;
     cl_program program;
-    cl_mem in_even_mem, out_even_mem, in_odd_mem, out_odd_mem;
+    cl_mem in_even_mem, out_even_mem, in_odd_mem, out_odd_mem, f0_mem, f1_mem;
     cl_mem m_d_mem;
     cl_kernel kernel;
     cl_event prof_event;
@@ -77,8 +77,10 @@ public:
     size_t getGlobalWorkItems(size_t globalThreads, size_t localThreads, int device);
     void executeMemObjects(cl_mem f_input, int *f, fstream *);
     void writeBufferToDevice(cl_mem &i, cl_mem &o, int *in, int *out);
+    void mapBuffers(cl_mem in, cl_mem out, int* i, int* o);
     void setKernelArgs(cl_mem &i, cl_mem &o, int wk, int vk, int maxelem);
-    void readBufferFromDevice(cl_mem &output_mem, int *output, fstream *);
+    void readBufferFromDevice(fstream *);
+    void unmapBuffer(cl_mem out, int* outPtr);
     void executeComputation(int i, fstream *);
     void printResults(fstream *);
     void checkError(cl_int);

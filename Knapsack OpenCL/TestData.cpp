@@ -8,6 +8,7 @@
 #include "TestData.h"
 
 TestData::TestData() {
+    
     numelem = 1000;
     weight.resize(numelem, 0);
     value.resize(numelem, 0);
@@ -18,13 +19,15 @@ TestData::TestData() {
     uniform_int_distribution<int> unifdist(1,numelem);
     
     for (int i = 0; i < numelem; i++) {
-        weight[i] = unifdist(random_engine); 
+        
+        weight[i] = unifdist(random_engine);     
         sum += weight[i];
         value[i] = weight[i] + 50;
+        
     }
 
     capacity = sum / 2;
-
+    
 }
 
 TestData::TestData(int numel) {
@@ -38,13 +41,16 @@ TestData::TestData(int numel) {
     uniform_int_distribution<int> unifdist(1,numelem);
     
     for (int i = 0; i < numelem; i++) {
+        
         weight[i] = rand()%numelem + 1;//unifdist(random_engine); 
         sum += weight[i];
         value[i] = weight[i]+rand()%numelem + 1; //+ 50;
+        cout << i << "weight: " << weight[i] << "\t" << "value: " << value[i] << endl;
+        
     }
 
     capacity = sum / 2;
-    cout << "Capacity: " << capacity << endl; 
+    cout << "Capacity: " << capacity << endl;
     
 
 }
