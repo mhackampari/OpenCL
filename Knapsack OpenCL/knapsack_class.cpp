@@ -920,49 +920,43 @@ void Knapsack::executeComputation(int i, fstream *logfile) {
     timer.start();
     chrono.startChrono();
     run_time = 0;
-    //writeBufferToDevice(f0_mem, f1_mem, f0, f1);
+    writeBufferToDevice(f0_mem, f1_mem, f0, f1);
     for (int k = 0; k < numelem; k++) {
 
         sumK = sumK - weight[k];
         cmax = 0;
         cmax = max(capacity - sumK, weight[k]);
         total_elements = (size_t) (capacity - cmax + 1);
-        *global_work_items = total_elements;
         *local_work_items = getLocalWorkItems(total_elements, *device_max_work_group_size, i);
-        //*local_work_items = 256;
         *global_work_items = getGlobalWorkItems(total_elements, *local_work_items, i);
 
         *logfile << "global_work_items: " << *global_work_items << endl;
         *logfile << "local_work_items: " << *local_work_items << endl;
-
-        //cout << endl;
         *logfile << endl;
-
-
 
         if (k % 2 == 0) {
             //writeBufferToDevice(in_even_mem, out_even_mem, f0, f1);
             //mapBuffers(f0_mem, f1_mem, f0, f1);
-            mapBuffers(in_even_mem, out_even_mem, f0, f1);
-            setKernelArgs(in_even_mem, out_even_mem, weight[k], value[k], (int) total_elements);
+            //mapBuffers(in_even_mem, out_even_mem, f0, f1);
+            setKernelArgs(f0_mem, f1_mem, weight[k], value[k], (int) total_elements);
             //setKernelArgs(in_even_mem, out_even_mem, weight[k], value[k], (int)total_elements);
             even(weight[k], value[k], i, logfile);
             
             //readBufferFromDevice(out_even_mem, f1, logfile);
-            unmapBuffer(out_even_mem, f1);
+            //unmapBuffer(out_even_mem, f1);
 
         } else {
             //writeBufferToDevice(in_odd_mem, out_odd_mem, f1, f0);
             //mapBuffers(f1_mem, f0_mem, f1, f0);
-            mapBuffers(in_odd_mem, out_odd_mem, f1, f0);
-            setKernelArgs(in_odd_mem, out_odd_mem, weight[k], value[k], (int) total_elements);
+            //mapBuffers(in_odd_mem, out_odd_mem, f1, f0);
+            setKernelArgs(f1_mem, f0_mem, weight[k], value[k], (int) total_elements);
             //setKernelArgs(in_odd_mem, out_odd_mem, weight[k], value[k], (int)total_elements);
             odd(weight[k], value[k], i, logfile);
             //readBufferFromDevice(out_odd_mem, f0, logfile);
-            unmapBuffer(out_odd_mem, f0);
+            //unmapBuffer(out_odd_mem, f0);
         }
-
-        //readBufferFromDevice(logfile);
+        
+        readBufferFromDevice(logfile);
         //unmapBuffer();
 
         //segmentation fault can be caused because of max memory limit(ram)
