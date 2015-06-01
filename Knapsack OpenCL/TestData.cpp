@@ -49,21 +49,6 @@ TestData::TestData(int numel) {
 
 }
 
-TestData::TestData(const TestData& t) {
-
-    cout << "COPY CONSTRUCTOR\n";
-    
-    numelem = this->numelem;
-    weight.resize(numelem, 0);
-    value.resize(numelem, 0);
-    sum = this->sum;
-    weight = this->weight;
-    value = this->value;
-    capacity = this->capacity;
-    
-
-}
-
 TestData::~TestData() {
     cout << "\nTEST DATA HAVE BEEN JUST DESTROYED\n";
 }

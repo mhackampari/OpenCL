@@ -48,9 +48,10 @@ int main(int argc, char** argv) {
         ksack.executeComputation(i, &logfile);
 
         ksack.printResults(&logfile);
+        logfile.close();
 
     }
-    logfile.close();
+    
     //http://stackoverflow.com/questions/14063791/double-free-or-corruption-but-why
    
     ch.stopChrono();

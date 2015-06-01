@@ -7,16 +7,20 @@
 using namespace std;
 
 void Knapsack::queryOclPlatformInfo(fstream *logfile) {
-    num_platforms = 1;
+     err = clGetPlatformIDs(
+            0, // the number of entries that can added to platforms
+            NULL, // list of OpenCL found 
+            &num_platforms);
+
     //prepare to allocate of the available platforms
     platforms = (cl_platform_id *) malloc(num_platforms * sizeof (cl_platform_id));
 
     //allocates the available platforms
     err = clGetPlatformIDs(
-            1, // the number of entries that can added to platforms
+            num_platforms, // the number of entries that can added to platforms
             platforms, // list of OpenCL found 
-            &num_platforms); //stores the actual number of platforms present
-
+            NULL); //stores the actual number of platforms present
+    
     for (int i = 0; i < num_platforms; i++) {
         cout << "*******************\n";
         *logfile << "*******************\n";
@@ -39,11 +43,12 @@ void Knapsack::queryOclPlatformInfo(fstream *logfile) {
                     platform_const_value[j], //type of information to get
                     size, //size of the info
                     platform_info, //contains the information about platform
-                    nullptr);
+                    NULL);
 
             cout << platform_const_string[j] << ": " << string(platform_info) << "\n";
             *logfile << platform_const_string[j] << ": " << string(platform_info) << "\n";
             free(platform_info);
+           
         }
     }
 
@@ -529,7 +534,7 @@ void Knapsack::createProgramBuild(int i, fstream *logfile) {
     string sourceKernel, line;
 
 
-    ofs.open("..//OpenCL//Knapsack OpenCL//knapsack_toth.cl", ios_base::in); //..//OpenCL//Knapsack OpenCL//knapsack_toth.cl
+    ofs.open("..\\OpenCL\\Knapsack OpenCL\\knapsack_toth.cl", ios_base::in); //..//OpenCL//Knapsack OpenCL//knapsack_toth.cl
     if (ofs.is_open()) {
         while (ofs.good()) {
             getline(ofs, line);
