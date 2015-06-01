@@ -923,15 +923,11 @@ void Knapsack::executeComputation(int i, fstream *logfile) {
         total_elements = (size_t) (capacity - cmax + 1);
         *global_work_items = total_elements;
         *local_work_items = getLocalWorkItems(total_elements, *device_max_work_group_size, i);
-        //*local_work_items = 256;
         *global_work_items = getGlobalWorkItems(total_elements, *local_work_items, i);
         
         *logfile << "global_work_items: " << *global_work_items << endl;
         *logfile << "local_work_items: " << *local_work_items << endl;
-
-        //cout << endl;
         *logfile << endl;
-
 
         if (k % 2 == 0) {
             writeBufferToDevice(in_even_mem, out_even_mem, f0, f1);
