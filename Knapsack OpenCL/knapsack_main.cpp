@@ -1,7 +1,12 @@
 /*
  * File:   knapsack_main.cpp
  * Author: terminator
- *TODO: write to the file the results and add timer function
+ * 
+ * This work is based on this article:
+ * Solving knapsack problems on GPU by V. Boyera, D. El Baza,  M. Elkihel
+ * https://cel.archives-ouvertes.fr/hal-01152223/document
+ * related work: Accelerating the knapsack problem on GPUs by Bharath Suri
+ * http://www.diva-portal.org/smash/get/diva2:439054/FULLTEXT01.pdf
  * Created on February 21, 2015, 10:07 PM
  */
 #include <CL/cl.h>
@@ -10,12 +15,6 @@
 #include <iostream>
 #include <random>
 
-//#include "Knapsach"
-//#include "Knapsach"
-//#include "Chrono.h"
-//#include "Timer.h"
-//#include "TestData.h"
-//#include <new.h>
 
 using namespace std;
 
@@ -35,7 +34,7 @@ class Knapsack {
 private:
     int capacity;
     int sum;
-    const int numelem = 1000;
+    const int numelem = 5;
     cl_int err;
     vector<int> weight;
     vector<int> value;
@@ -44,6 +43,7 @@ private:
     cl_program program;
     cl_kernel kernel;
     cl_mem in;
+    cl_ulong run_time;
 
     vector<int> m_d;
     vector<int> M; //allocate dynamically in execute phase
@@ -215,7 +215,6 @@ public:
 
         cl_ulong start_time = 0;
         cl_ulong end_time = 0;
-        cl_ulong run_time = 0;
 
         err = clGetEventProfilingInfo(prof_event, CL_PROFILING_COMMAND_QUEUED, sizeof (cl_ulong), &start_time, NULL);
         checkError(err);
@@ -224,7 +223,7 @@ public:
         checkError(err);
 
         run_time += (end_time - start_time) * pow(10, -6);
-        //cout << "run_time: " << run_time << endl;
+       
 
     }
 
@@ -288,7 +287,10 @@ public:
             }
 
         }
-
+        
+         cout << "run_time: " << run_time/numelem*1.0 << endl; 
+         run_time = 0;
+        
         cout << "\nCAPACITA: " << capacita << endl;
         for (int i = 0; i < capacity + 1; i++) {
             f1[i] = 0; //f[i] = 0;
@@ -471,6 +473,10 @@ public:
         return f1.data();
     }
     
+    int getSum(){
+        return sum;
+    }
+    
     void writeToM(int j){
         //segmentation fault can be caused because of max memory limit(ram)
             //memcpy(M + k*capacity, m_d, sizeof (int)*capacity);
@@ -505,28 +511,28 @@ int main(int argc, char** argv) {
         int total_elements = 0;
         int cmax = 0;
         int capacity = ksack.getCapacity();
-        sumK = capacity;
+        sumK = ksack.getSum();
         int numelem = ksack.getNumelem();
-        for (int j = 0; j < numelem; j++) {
+        for (int k = 0; k < numelem; k++) {
 
-            sumK = sumK - ksack.getWeight(j);
-            cmax = max(capacity - sumK, ksack.getWeight(j));
+            sumK = sumK - ksack.getWeight(k);
+            cmax = max(capacity - sumK, ksack.getWeight(k));
             total_elements = capacity - cmax + 1;
 
-            if (j % 2 == 0) {
+            if (k % 2 == 0) {
                 ksack.writeBufferToDevice(ksack.in_even_mem, ksack.out_even_mem, ksack.getf0Ptr(), ksack.getf1Ptr());
-                ksack.setKernelArgs(ksack.in_even_mem, ksack.out_even_mem, j, cmax, total_elements);
+                ksack.setKernelArgs(ksack.in_even_mem, ksack.out_even_mem, k, cmax, total_elements);
                 ksack.executeNDRange(total_elements, i);
                 ksack.readBufferFromDevice(ksack.out_even_mem, ksack.f1.data());
 
             } else {
                 ksack.writeBufferToDevice(ksack.in_odd_mem, ksack.out_odd_mem, ksack.getf1Ptr(), ksack.getf0Ptr());
-                ksack.setKernelArgs(ksack.in_odd_mem, ksack.out_odd_mem, j, cmax, total_elements);
+                ksack.setKernelArgs(ksack.in_odd_mem, ksack.out_odd_mem, k, cmax, total_elements);
                 ksack.executeNDRange(total_elements, i);
                 ksack.readBufferFromDevice(ksack.out_odd_mem, ksack.f0.data());
             }
             
-            ksack.writeToM(j+1);
+            ksack.writeToM(k+1);
 
         }//for numelements
         
