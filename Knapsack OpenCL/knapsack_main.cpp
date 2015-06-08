@@ -15,7 +15,7 @@
 #include <iostream>
 #include <random>
 
-
+#define NUMELEM 5
 using namespace std;
 
 class Knapsack {
@@ -34,14 +34,14 @@ class Knapsack {
 private:
     int capacity;
     int sum;
-    const int numelem = 5;
+    const int numelem = NUMELEM;
     cl_int err;
     vector<int> weight;
     vector<int> value;
     cl_command_queue queue;
     cl_context context;
     cl_program program;
-    cl_kernel kernel;
+    cl_kernel kernel, kernel1, kernel2;
     cl_mem in;
     cl_ulong run_time;
 
@@ -52,7 +52,7 @@ private:
     vector<cl_platform_id> platforms;
     vector<cl_device_id> device_id;
 public:
-    cl_mem in_even_mem, in_odd_mem, out_even_mem, out_odd_mem, m_d_mem;
+    cl_mem in_even_mem, in_odd_mem, out_even_mem, out_odd_mem, m_d_mem, f0_mem, f1_mem;
     vector<int> f0;
     vector<int> f1;
 
@@ -70,7 +70,7 @@ public:
     }
 
     void generateRandomData() {
-
+        sum = 0;
         value.resize(numelem, 0);
         weight.resize(numelem, 0);
         default_random_engine random_engine;
@@ -141,16 +141,26 @@ public:
         checkError(err);
         m_d_mem = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof (int)*(capacity), NULL, &err);
         checkError(err);
+        f1_mem = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof (int)*(capacity + 1), NULL, &err);
+        checkError(err);
+        f0_mem = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof (int)*(capacity + 1), NULL, &err);
+        checkError(err);
+        m_d_mem = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof (int)*(capacity), NULL, &err);
+        checkError(err);
 
     }
 
     void createKernel() {
         kernel = clCreateKernel(program, "knapsack", &err);
         checkError(err);
+        kernel1 = clCreateKernel(program, "knapsack", &err);
+        checkError(err);
+        kernel2 = clCreateKernel(program, "knapsack", &err);
+        checkError(err);
     }
 
     void writeBufferToDevice(cl_mem& in, cl_mem& out, int* input, int* output) {
-        
+
         err = clEnqueueWriteBuffer(queue, in, CL_TRUE, 0, sizeof (int)*(capacity + 1), input, 0, NULL, NULL);
         checkError(err);
         err = clEnqueueWriteBuffer(queue, out, CL_TRUE, 0, sizeof (capacity)*(capacity + 1), output, 0, NULL, NULL);
@@ -167,6 +177,15 @@ public:
 
         err = clEnqueueReadBuffer(queue, output_mem, CL_TRUE, 0, sizeof (int)*(capacity + 1), output, 0, NULL, NULL);
         checkError(err);
+    }
+
+    void readBufferFromDevice1() {
+
+        err = clEnqueueReadBuffer(queue, m_d_mem, CL_TRUE, 0, sizeof (int)*capacity, m_d.data(), 0, NULL, NULL);
+        checkError(err);
+
+        //err = clEnqueueReadBuffer(queue, output_mem, CL_TRUE, 0, sizeof (int)*(capacity + 1), output, 0, NULL, NULL);
+        //checkError(err);
     }
 
     void setKernelArgs(cl_mem& input, cl_mem& output, int k, int cmax, int total_elements) {
@@ -223,7 +242,7 @@ public:
         checkError(err);
 
         run_time += (end_time - start_time) * pow(10, -6);
-       
+
 
     }
 
@@ -244,20 +263,19 @@ public:
          *logfile << *(f1 + i) << " ";
                 }
 
-            }
-
-            cout << endl;
-            cout << "Matrix of decisions M[items][capacity]: " << endl;
-         *logfile << endl;
-         *logfile << "Matrix of decisions M[items][capacity]: " << endl;
-            for (int i = 0; i < numelem * capacity; i++) {
-                cout << *(M + i) << "; ";
-         *logfile << *(M + i) << "; ";
-                if ((i + 1) % (capacity) == 0) {
-                    cout << endl;
-            // *logfile << endl;
-                }
             }*/
+
+        cout << endl;
+        cout << "Matrix of decisions M[items][capacity]: " << endl;
+
+        for (int i = 0; i < numelem * capacity; i++) {
+            cout << M[i] << "; ";
+
+            if ((i + 1) % (capacity) == 0) {
+                cout << endl;
+                // *logfile << endl;
+            }
+        }
 
         cout << "SumWeight: " << sum << "\t Capacity: " << capacity << "\n";
         cout << "\nKnapsack's worth: ";
@@ -287,10 +305,10 @@ public:
             }
 
         }
-        
-         cout << "run_time: " << run_time/numelem*1.0 << endl; 
-         run_time = 0;
-        
+
+        cout << "run_time: " << run_time / numelem * 1.0 << endl;
+        run_time = 0;
+
         cout << "\nCAPACITA: " << capacita << endl;
         for (int i = 0; i < capacity + 1; i++) {
             f1[i] = 0; //f[i] = 0;
@@ -448,49 +466,53 @@ public:
                 return "unknown error code";
         }
     }
-    
-    int getWeight(int j){
+
+    int getWeight(int j) {
         return weight.at(j);
     }
-    
-    int getNumelem(){
+
+    int getNumelem() {
         return numelem;
     }
-    
-    int getCapacity(){
+
+    int getCapacity() {
         return capacity;
     }
-    
-    int getDeviceSize(){
+
+    int getDeviceSize() {
         return device_id.size();
     }
-    
-    int* getf0Ptr(){
+
+    int* getf0Ptr() {
         return f0.data();
     }
-    
-    int* getf1Ptr(){
+
+    int* getf1Ptr() {
         return f1.data();
     }
-    
-    int getSum(){
+
+    int getSum() {
         return sum;
     }
-    
-    void writeToM(int j){
-        //segmentation fault can be caused because of max memory limit(ram)
-            //memcpy(M + k*capacity, m_d, sizeof (int)*capacity);
-            try {
-                M.resize(capacity * j, 0);
-            } catch (int e) {
-                cerr << "BAD_ALLOC CAUGHT: try with smaller 'numelem' number" << e << endl;
-                exit(1);
-            }
-            vector<int>::iterator it = M.begin()+(j-1) * capacity;
-            M.insert(it, m_d.begin(), m_d.end());
 
-            m_d.assign(capacity, 0);
-            
+    cl_command_queue getQueue() {
+        return queue;
+    }
+
+    void writeToM(int j) {
+        //segmentation fault can be caused because of max memory limit(ram)
+        //memcpy(M + k*capacity, m_d, sizeof (int)*capacity);
+        try {
+            M.resize(capacity * j, 0);
+        } catch (int e) {
+            cerr << "BAD_ALLOC CAUGHT: try with smaller 'numelem' number" << e << endl;
+            exit(1);
+        }
+        vector<int>::iterator it = M.begin()+(j - 1) * capacity;
+        M.insert(it, m_d.begin(), m_d.end());
+
+        m_d.assign(capacity, 0);
+
     }
 
 };
@@ -513,6 +535,11 @@ int main(int argc, char** argv) {
         int capacity = ksack.getCapacity();
         sumK = ksack.getSum();
         int numelem = ksack.getNumelem();
+
+        //ORIGINAL WORKING CODE
+        cout << "\n\n******";
+        cout << "ORIGINAL CODE********\n\n";
+
         for (int k = 0; k < numelem; k++) {
 
             sumK = sumK - ksack.getWeight(k);
@@ -531,17 +558,54 @@ int main(int argc, char** argv) {
                 ksack.executeNDRange(total_elements, i);
                 ksack.readBufferFromDevice(ksack.out_odd_mem, ksack.f0.data());
             }
-            
-            ksack.writeToM(k+1);
+
+            ksack.writeToM(k + 1);
 
         }//for numelements
         
+        ksack.printResults();
+        cout << "\n\n******";
+        cout << "SWAPPING TWO BUFFERS********\n\n";
+
+        //SWAPPING TWO BUFFERS
+        
+        sumK = 0;
+        total_elements = 0;
+        cmax = 0;
+        capacity = ksack.getCapacity();
+        sumK = ksack.getSum();
+        numelem = ksack.getNumelem();
+        ksack.writeBufferToDevice(ksack.f0_mem, ksack.f1_mem, ksack.getf0Ptr(), ksack.getf1Ptr());
+        for (int k = 0; k < numelem; k++) {
+
+            sumK = sumK - ksack.getWeight(k);
+            cmax = max(capacity - sumK, ksack.getWeight(k));
+            total_elements = capacity - cmax + 1;
+
+            if (k % 2 == 0) {
+                ksack.setKernelArgs(ksack.f0_mem, ksack.f1_mem, k, cmax, total_elements);
+            } else {
+                ksack.setKernelArgs(ksack.f1_mem, ksack.f0_mem, k, cmax, total_elements);
+            }
+
+            ksack.executeNDRange(total_elements, i);
+            ksack.readBufferFromDevice1();
+            //memcpy(M + k*capacity, m_d, sizeof (int)*capacity);
+            ksack.writeToM(k + 1);
+
+        }
+        if (ksack.getNumelem() % 2 == 0) {
+            clEnqueueReadBuffer(ksack.getQueue(), ksack.f0_mem, CL_TRUE, 0, sizeof (capacity)*(capacity + 1), ksack.getf0Ptr(), 0, NULL, NULL);
+        } else {
+            clEnqueueReadBuffer(ksack.getQueue(), ksack.f1_mem, CL_TRUE, 0, sizeof (capacity)*(capacity + 1), ksack.getf1Ptr(), 0, NULL, NULL);
+        }
+
         ksack.printResults();
 
     }//for device
 
     ksack.cleanUp();
-    
+
 
     return 0;
 
