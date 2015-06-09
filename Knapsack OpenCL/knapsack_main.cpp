@@ -21,16 +21,17 @@ using namespace std;
 class Knapsack {
     const string kernelString =
             "void kernel knapsack(global int *input_f, global int *output_f, global int *m_d,  int cmax, int weightk, int pk, int maxelem){\
-            int c = get_global_id(0)+cmax;\
-            if(get_global_id(0)<maxelem){\
-                if(input_f[c] < input_f[c - weightk] + pk){\
-                    output_f[c] = input_f[c - weightk] + pk;\
-                    m_d[c-1] = 1;\
-                } \
-            else{\
-                output_f[c] = input_f[c];\
+                int c = get_global_id(0)+cmax;\
+                if(get_global_id(0)<maxelem){\
+                    if(input_f[c] < input_f[c - weightk] + pk){\
+                        output_f[c] = input_f[c - weightk] + pk;\
+                        m_d[c-1] = 1;\
+                    } \
+                else{\
+                    output_f[c] = input_f[c];\
+                    }\
                 }\
-            } }";
+            }";
 private:
     int capacity;
     int sum;
@@ -169,6 +170,13 @@ public:
         checkError(err);
 
     }
+    
+    void writeBuffer_m_d_ToDevice() {
+
+        err = clEnqueueWriteBuffer(queue, m_d_mem, CL_TRUE, 0, sizeof (capacity)*(capacity), m_d.data(), 0, NULL, NULL);
+        checkError(err);
+
+    }
 
     void readBufferFromDevice(cl_mem &output_mem, int* output) {
 
@@ -179,7 +187,7 @@ public:
         checkError(err);
     }
 
-    void readBufferFromDevice1() {
+    void readBuffer_m_d_FromDevice() {
 
         err = clEnqueueReadBuffer(queue, m_d_mem, CL_TRUE, 0, sizeof (int)*capacity, m_d.data(), 0, NULL, NULL);
         checkError(err);
@@ -515,6 +523,10 @@ public:
 
     }
 
+    vector<int>::iterator getMd() {
+        return m_d.begin();
+    }
+
 };
 
 int main(int argc, char** argv) {
@@ -562,13 +574,13 @@ int main(int argc, char** argv) {
             ksack.writeToM(k + 1);
 
         }//for numelements
-        
+
         ksack.printResults();
         cout << "\n\n******";
         cout << "SWAPPING TWO BUFFERS********\n\n";
 
         //SWAPPING TWO BUFFERS
-        
+
         sumK = 0;
         total_elements = 0;
         cmax = 0;
@@ -576,6 +588,7 @@ int main(int argc, char** argv) {
         sumK = ksack.getSum();
         numelem = ksack.getNumelem();
         ksack.writeBufferToDevice(ksack.f0_mem, ksack.f1_mem, ksack.getf0Ptr(), ksack.getf1Ptr());
+
         for (int k = 0; k < numelem; k++) {
 
             sumK = sumK - ksack.getWeight(k);
@@ -586,12 +599,15 @@ int main(int argc, char** argv) {
                 ksack.setKernelArgs(ksack.f0_mem, ksack.f1_mem, k, cmax, total_elements);
             } else {
                 ksack.setKernelArgs(ksack.f1_mem, ksack.f0_mem, k, cmax, total_elements);
+                
             }
 
             ksack.executeNDRange(total_elements, i);
-            ksack.readBufferFromDevice1();
+            ksack.readBuffer_m_d_FromDevice();
+            
             //memcpy(M + k*capacity, m_d, sizeof (int)*capacity);
             ksack.writeToM(k + 1);
+            ksack.writeBuffer_m_d_ToDevice();//resets m_d_mem 
 
         }
         if (ksack.getNumelem() % 2 == 0) {
