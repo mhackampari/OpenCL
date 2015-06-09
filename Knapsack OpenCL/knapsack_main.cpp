@@ -258,7 +258,6 @@ public:
         cout << "\nPRINTOUT OF THE RESULTS: " << endl;
         cout << "*************************************************" << endl;
 
-
         /*
              cout << "Evolution of the Knapsack worth F[x]: ";
              //*logfile << "Evolution of the Knapsack worth F[x]: ";
@@ -281,23 +280,13 @@ public:
 
             if ((i + 1) % (capacity) == 0) {
                 cout << endl;
-                // *logfile << endl;
             }
         }
-
-        cout << "SumWeight: " << sum << "\t Capacity: " << capacity << "\n";
-        cout << "\nKnapsack's worth: ";
-
-        if (numelem % 2 == 0) {
-            cout << f0[capacity] << endl;
-        } else {
-            cout << f1[capacity] << endl;
-        }
-        cout << endl;
 
         cout << "Chosen items are:" << endl;
 
         int cap = capacity;
+        int worth = 0;
         int capacita = 0;
         for (int item = numelem - 1; item > -1; item--) {
             for (int c = cap - 1; c > -1; c--) {
@@ -305,6 +294,7 @@ public:
                     cout << "Value " << item << ": " << value[item];
                     cout << "\t" << "Weight " << item << ": " << weight[item] << endl;
                     capacita += weight[item];
+                    worth += value[item];
                     cap = cap - weight[item];
                     break;
                 } else if (M[item * (capacity) + c] == 0) {
@@ -313,15 +303,15 @@ public:
             }
 
         }
-
+        
+        cout << "SumWeight: " << sum << "\t Capacity: " << capacity << "\n";
+        cout << "Knapsack's worth: " << worth << endl;
         cout << "run_time: " << run_time / numelem * 1.0 << endl;
         run_time = 0;
-
-        cout << "\nCAPACITA: " << capacita << endl;
-        for (int i = 0; i < capacity + 1; i++) {
-            f1[i] = 0; //f[i] = 0;
-            f0[i] = 0;
-        }
+        
+        //http://stackoverflow.com/questions/8848575/fastest-way-to-reset-every-value-of-stdvectorint-to-0
+        fill(f0.begin(), f0.end(), 0); // f0.assign(f0.size(),0);
+        fill(f1.begin(), f1.end(), 0); // f1.assign(f1.size(),0);
 
         cout << "*************************************************" << endl;
         cout << "END OF THE PRINTOUT" << endl;
@@ -518,7 +508,7 @@ public:
         }
         vector<int>::iterator it = M.begin()+(j - 1) * capacity;
         M.insert(it, m_d.begin(), m_d.end());
-
+        // http://stackoverflow.com/questions/8848575/fastest-way-to-reset-every-value-of-stdvectorint-to-0
         m_d.assign(capacity, 0);
 
     }
@@ -546,60 +536,20 @@ int main(int argc, char** argv) {
         int cmax = 0;
         int capacity = ksack.getCapacity();
         sumK = ksack.getSum();
-        int numelem = ksack.getNumelem();
-
-        //ORIGINAL WORKING CODE
-        cout << "\n\n******";
-        cout << "ORIGINAL CODE********\n\n";
-
-        for (int k = 0; k < numelem; k++) {
-
-            sumK = sumK - ksack.getWeight(k);
-            cmax = max(capacity - sumK, ksack.getWeight(k));
-            total_elements = capacity - cmax + 1;
-
-            if (k % 2 == 0) {
-                ksack.writeBufferToDevice(ksack.in_even_mem, ksack.out_even_mem, ksack.getf0Ptr(), ksack.getf1Ptr());
-                ksack.setKernelArgs(ksack.in_even_mem, ksack.out_even_mem, k, cmax, total_elements);
-                ksack.executeNDRange(total_elements, i);
-                ksack.readBufferFromDevice(ksack.out_even_mem, ksack.f1.data());
-
-            } else {
-                ksack.writeBufferToDevice(ksack.in_odd_mem, ksack.out_odd_mem, ksack.getf1Ptr(), ksack.getf0Ptr());
-                ksack.setKernelArgs(ksack.in_odd_mem, ksack.out_odd_mem, k, cmax, total_elements);
-                ksack.executeNDRange(total_elements, i);
-                ksack.readBufferFromDevice(ksack.out_odd_mem, ksack.f0.data());
-            }
-
-            ksack.writeToM(k + 1);
-
-        }//for numelements
-
-        ksack.printResults();
-        cout << "\n\n******";
-        cout << "SWAPPING TWO BUFFERS********\n\n";
-
-        //SWAPPING TWO BUFFERS
-
-        sumK = 0;
-        total_elements = 0;
-        cmax = 0;
-        capacity = ksack.getCapacity();
-        sumK = ksack.getSum();
-        numelem = ksack.getNumelem();
+        int numelem = ksack.getNumelem();        
+        
         ksack.writeBufferToDevice(ksack.f0_mem, ksack.f1_mem, ksack.getf0Ptr(), ksack.getf1Ptr());
-
         for (int k = 0; k < numelem; k++) {
 
             sumK = sumK - ksack.getWeight(k);
             cmax = max(capacity - sumK, ksack.getWeight(k));
             total_elements = capacity - cmax + 1;
-
+            
+            //SWAPPING TWO BUFFERS
             if (k % 2 == 0) {
                 ksack.setKernelArgs(ksack.f0_mem, ksack.f1_mem, k, cmax, total_elements);
             } else {
                 ksack.setKernelArgs(ksack.f1_mem, ksack.f0_mem, k, cmax, total_elements);
-                
             }
 
             ksack.executeNDRange(total_elements, i);
@@ -610,20 +560,12 @@ int main(int argc, char** argv) {
             ksack.writeBuffer_m_d_ToDevice();//resets m_d_mem 
 
         }
-        if (ksack.getNumelem() % 2 == 0) {
-            clEnqueueReadBuffer(ksack.getQueue(), ksack.f0_mem, CL_TRUE, 0, sizeof (capacity)*(capacity + 1), ksack.getf0Ptr(), 0, NULL, NULL);
-        } else {
-            clEnqueueReadBuffer(ksack.getQueue(), ksack.f1_mem, CL_TRUE, 0, sizeof (capacity)*(capacity + 1), ksack.getf1Ptr(), 0, NULL, NULL);
-        }
 
         ksack.printResults();
 
     }//for device
 
     ksack.cleanUp();
-
-
     return 0;
-
 }
 
