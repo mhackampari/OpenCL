@@ -7,20 +7,16 @@
 using namespace std;
 
 void Knapsack::queryOclPlatformInfo(fstream *logfile) {
-     err = clGetPlatformIDs(
-            0, // the number of entries that can added to platforms
-            NULL, // list of OpenCL found 
-            &num_platforms);
-
+    num_platforms = 1;
     //prepare to allocate of the available platforms
     platforms = (cl_platform_id *) malloc(num_platforms * sizeof (cl_platform_id));
 
     //allocates the available platforms
     err = clGetPlatformIDs(
-            num_platforms, // the number of entries that can added to platforms
+            1, // the number of entries that can added to platforms
             platforms, // list of OpenCL found 
             NULL); //stores the actual number of platforms present
-    
+
     for (int i = 0; i < num_platforms; i++) {
         cout << "*******************\n";
         *logfile << "*******************\n";
@@ -43,12 +39,11 @@ void Knapsack::queryOclPlatformInfo(fstream *logfile) {
                     platform_const_value[j], //type of information to get
                     size, //size of the info
                     platform_info, //contains the information about platform
-                    NULL);
+                    nullptr);
 
             cout << platform_const_string[j] << ": " << string(platform_info) << "\n";
             *logfile << platform_const_string[j] << ": " << string(platform_info) << "\n";
             free(platform_info);
-           
         }
     }
 
@@ -259,8 +254,8 @@ void Knapsack::queryOclDeviceInfo(int i, fstream *logfile) {
         *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     }
 
-    cout << "\nCL_DEVICE_GLOBAL_MEM_SIZE: " << device_global_mem_size[i] / pow(10.0, 6) << " MB";
-    *logfile << "\nCL_DEVICE_GLOBAL_MEM_SIZE: " << device_global_mem_size[i] / pow(10.0, 6) << " MB";
+    cout << "\nCL_DEVICE_GLOBAL_MEM_SIZE: " << device_global_mem_size[0] / pow(10.0, 6) << " MB";
+    *logfile << "\nCL_DEVICE_GLOBAL_MEM_SIZE: " << device_global_mem_size[0] / pow(10.0, 6) << " MB";
     free(device_global_mem_size);
 
     err = clGetDeviceInfo(device_id[i],
@@ -315,8 +310,8 @@ void Knapsack::queryOclDeviceInfo(int i, fstream *logfile) {
         *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     }
 
-    cout << "\nCL_DEVICE_GLOBAL_MEM_CACHE_SIZE: " << device_global_mem_cache_size[i] / 1000 << "KB";
-    *logfile << "\nCL_DEVICE_GLOBAL_MEM_CACHE_SIZE: " << device_global_mem_cache_size[i] / 1000 << "KB";
+    cout << "\nCL_DEVICE_GLOBAL_MEM_CACHE_SIZE: " << device_global_mem_cache_size[0] / 1000 << "KB";
+    *logfile << "\nCL_DEVICE_GLOBAL_MEM_CACHE_SIZE: " << device_global_mem_cache_size[0] / 1000 << "KB";
     free(device_global_mem_cache_size);
 
     err = clGetDeviceInfo(device_id[i],
@@ -343,8 +338,8 @@ void Knapsack::queryOclDeviceInfo(int i, fstream *logfile) {
         *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     }
 
-    cout << "\nCL_DEVICE_LOCAL_MEM_SIZE: " << device_local_mem_size[i] / 1000 << "KB";
-    *logfile << "\nCL_DEVICE_LOCAL_MEM_SIZE: " << device_local_mem_size[i] / 1000 << "KB";
+    cout << "\nCL_DEVICE_LOCAL_MEM_SIZE: " << device_local_mem_size[0] / 1000 << "KB";
+    *logfile << "\nCL_DEVICE_LOCAL_MEM_SIZE: " << device_local_mem_size[0] / 1000 << "KB";
     free(device_local_mem_size);
 
     err = clGetDeviceInfo(device_id[i],
@@ -391,7 +386,7 @@ void Knapsack::queryOclDeviceInfo(int i, fstream *logfile) {
             break;
     };
 
-    *logfile << "\nCL_DEVICE_LOCAL_MEM_TYPE: " << device_local_mem_type[i];
+    *logfile << "\nCL_DEVICE_LOCAL_MEM_TYPE: " << device_local_mem_type[0];
     free(device_local_mem_type);
 
 
@@ -420,8 +415,8 @@ void Knapsack::queryOclDeviceInfo(int i, fstream *logfile) {
         *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     }
 
-    cout << "\nCL_DEVICE_MAX_COMPUTE_UNITS: " << device_max_compute_units[i];
-    *logfile << "\nCL_DEVICE_MAX_COMPUTE_UNITS: " << device_max_compute_units[i];
+    cout << "\nCL_DEVICE_MAX_COMPUTE_UNITS: " << device_max_compute_units[0];
+    *logfile << "\nCL_DEVICE_MAX_COMPUTE_UNITS: " << device_max_compute_units[0];
     free(device_max_compute_units);
 
     /*Maximum number of work-items in a work-group executing a kernel 
@@ -452,8 +447,8 @@ void Knapsack::queryOclDeviceInfo(int i, fstream *logfile) {
         *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     }
 
-    cout << "\nCL_DEVICE_MAX_WORK_GROUP_SIZE: " << device_max_work_group_size[i];
-    *logfile << "\nCL_DEVICE_MAX_WORK_GROUP_SIZE: " << device_max_work_group_size[i];
+    cout << "\nCL_DEVICE_MAX_WORK_GROUP_SIZE: " << device_max_work_group_size[0];
+    *logfile << "\nCL_DEVICE_MAX_WORK_GROUP_SIZE: " << device_max_work_group_size[0];
     //free(device_max_work_group_size) is in cleanup function
 
 
@@ -534,7 +529,7 @@ void Knapsack::createProgramBuild(int i, fstream *logfile) {
     string sourceKernel, line;
 
 
-    ofs.open("..\\OpenCL\\Knapsack OpenCL\\knapsack_toth.cl", ios_base::in); //..//OpenCL//Knapsack OpenCL//knapsack_toth.cl
+    ofs.open("..//OpenCL//Knapsack OpenCL//knapsack_toth.cl", ios_base::in); //..//OpenCL//Knapsack OpenCL//knapsack_toth.cl
     if (ofs.is_open()) {
         while (ofs.good()) {
             getline(ofs, line);
@@ -928,15 +923,11 @@ void Knapsack::executeComputation(int i, fstream *logfile) {
         total_elements = (size_t) (capacity - cmax + 1);
         *global_work_items = total_elements;
         *local_work_items = getLocalWorkItems(total_elements, *device_max_work_group_size, i);
-        //*local_work_items = 256;
         *global_work_items = getGlobalWorkItems(total_elements, *local_work_items, i);
         
         *logfile << "global_work_items: " << *global_work_items << endl;
         *logfile << "local_work_items: " << *local_work_items << endl;
-
-        //cout << endl;
         *logfile << endl;
-
 
         if (k % 2 == 0) {
             writeBufferToDevice(in_even_mem, out_even_mem, f0, f1);
@@ -1286,4 +1277,3 @@ string Knapsack::getErrorCode(int e) {
         default:
             return "unknown error code";
     }
-}
