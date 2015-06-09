@@ -18,6 +18,7 @@ class TestData {
 public:
     TestData();
     TestData(int);
+    TestData(const TestData& t);
     virtual ~TestData();
     void init_data();
     int* getValue();
