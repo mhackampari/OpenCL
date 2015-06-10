@@ -291,14 +291,35 @@ public:
         int cap = capacity;
         int worth = 0;
         int capacita = 0;
-        for (int item = numelem - 1; item > -1; item--) {
+        /*for (int item = numelem - 1; item > -1; item--) { 
             for (int c = cap - 1; c > -1; c--) {
-                if (M[item * (capacity) + c] != 0) {
+                if (M[item * (capacity) + c] != 0) {                    
+                    
                     cout << "Value " << item << ": " << value[item];
                     cout << "\t" << "Weight " << item << ": " << weight[item] << endl;
                     capacita += weight[item];
                     worth += value[item];
                     cap = cap - weight[item];
+                    break;
+                } else if (M[item * (capacity) + c] == 0) {
+                    c = 0;
+                }
+            }
+
+        }*/
+        
+        for (int item = ceil(numelem/32) - 1; item > -1; item--) { //64/32 - 1 = 1; 61/32 - 1 = 0 != 1 wrong!!!; 
+            for (int c = cap - 1; c > -1; c--) {
+                if (M[item * (capacity) + c] != 0) {
+                    
+                    int x = 32-log2(M[item * (capacity) + c]); // M[63] = 2^28; 32 - log2(2^28) = 4; value[(numelem - 4 - 1)*capacity + c]
+                    
+                    
+                    cout << "Value " << item << ": " << value[(numelem - x - 1)*capacity + c];
+                    cout << "\t" << "Weight " << item << ": " << weight[(numelem - x - 1)*capacity + c] << endl;
+                    capacita += weight[(numelem - x - 1)*capacity + c];
+                    worth += value[(numelem - x - 1)*capacity + c];
+                    cap = cap - weight[(numelem - x - 1)*capacity + c];
                     break;
                 } else if (M[item * (capacity) + c] == 0) {
                     c = 0;
