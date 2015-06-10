@@ -14,8 +14,9 @@
 #include <string>
 #include <iostream>
 #include <random>
+#include <algorithm>
 
-#define NUMELEM 5
+#define NUMELEM 32
 using namespace std;
 
 class Knapsack {
@@ -25,8 +26,8 @@ class Knapsack {
                 if(get_global_id(0)<maxelem){\
                     if(input_f[c] < input_f[c - weightk] + pk){\
                         output_f[c] = input_f[c - weightk] + pk;\
-                        m_d[c-1] += pow(2,i);\
-                    } \
+                        m_d[c-1] += pown(2.0,i);\
+                    }\
                 else{\
                     output_f[c] = input_f[c];\
                     }\
@@ -278,7 +279,7 @@ public:
         cout << endl;
         cout << "Matrix of decisions M[items][capacity]: " << endl;
 
-        for (int i = 0; i < numelem * capacity; i++) {
+        for (int i = 0; i < ceil(numelem/32.0) * capacity; i++) {
             cout << M[i] << "; ";
 
             if ((i + 1) % (capacity) == 0) {
@@ -308,7 +309,7 @@ public:
 
         }*/
         
-        for (int item = ceil(numelem/32) - 1; item > -1; item--) { //64/32 - 1 = 1; 61/32 - 1 = 0 != 1 wrong!!!; 
+        for (int item = ceil(numelem/32.0) - 1; item > -1; item--) { //64/32 - 1 = 1; 61/32 - 1 = 0 != 1 wrong!!!; 
             for (int c = cap - 1; c > -1; c--) {
                 if (M[item * (capacity) + c] != 0) {
                     
@@ -530,6 +531,10 @@ public:
             cerr << "BAD_ALLOC CAUGHT: try with smaller 'numelem' number" << e << endl;
             exit(1);
         }
+        vector<int>::iterator its = max_element(m_d.begin(),m_d.end());
+        for(int i = 0; i < capacity; i++)
+            cout << "m_d"<< i<<" "<<m_d[i] << endl;
+        cout << "\n\n" << *its <<endl;
         vector<int>::iterator it = M.begin()+(j - 1) * capacity;
         M.insert(it, m_d.begin(), m_d.end());
         // http://stackoverflow.com/questions/8848575/fastest-way-to-reset-every-value-of-stdvectorint-to-0
@@ -579,7 +584,7 @@ int main(int argc, char** argv) {
             }
             ksack.executeNDRange(total_elements, i);
             
-            if (bit_count == 32) {
+            if (k%32 == 31) {
                 ksack.readBuffer_m_d_FromDevice();
                 //memcpy(M + k*capacity, m_d, sizeof (int)*capacity);
                 ksack.writeToM(k_M);
