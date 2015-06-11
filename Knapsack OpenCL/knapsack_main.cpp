@@ -16,7 +16,7 @@
 #include <random>
 #include <algorithm>
 
-#define NUMELEM 32
+#define NUMELEM 64
 using namespace std;
 
 class Knapsack {
@@ -84,7 +84,7 @@ public:
             value[i] = weight[i] + 50;
         }
 
-        capacity = sum / 2;
+        capacity = sum / 50;
 
         vector<int>::iterator it_weight, it_value;
         it_weight = weight.begin();
@@ -133,16 +133,6 @@ public:
 
     void createMemoryObjects() {
 
-        in_even_mem = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof (int)*(capacity + 1), NULL, &err);
-        checkError(err);
-        out_even_mem = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof (int)*(capacity + 1), NULL, &err);
-        checkError(err);
-        in_odd_mem = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof (int)*(capacity + 1), NULL, &err);
-        checkError(err);
-        out_odd_mem = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof (int)*(capacity + 1), NULL, &err);
-        checkError(err);
-        m_d_mem = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof (int)*(capacity), NULL, &err);
-        checkError(err);
         f1_mem = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof (int)*(capacity + 1), NULL, &err);
         checkError(err);
         f0_mem = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof (int)*(capacity + 1), NULL, &err);
@@ -219,7 +209,7 @@ public:
 
         err = clSetKernelArg(kernel, 6, sizeof (int), &total_elements);
         checkError(err);
-        
+
         err = clSetKernelArg(kernel, 7, sizeof (int), &i);
         checkError(err);
 
@@ -279,58 +269,48 @@ public:
         cout << endl;
         cout << "Matrix of decisions M[items][capacity]: " << endl;
 
-        for (int i = 0; i < ceil(numelem/32.0) * capacity; i++) {
-            cout << M[i] << "; ";
+        for (int i = 0; i < ceil(numelem / 32.0) * capacity; i++) {
 
+            uint x = ceil(log2(M[i]));
+            cout << i<< ": " << x << "; \n";
             if ((i + 1) % (capacity) == 0) {
-                cout << endl;
+                cout << "***" << endl;
+            }
+        }
+
+        int c = capacity;
+        int bit = pow(2, 31);
+        int bit32 = 32;
+        int worth = 0;
+        int capacita = 0;
+        
+        for (int i = ceil(numelem / 32.0)-1; i >= 0; i--) {
+            bit32 = 32;
+            cout << "**numelem / 32.0**" << endl;
+            while (bit32 > 0) {
+
+                uint m = M[i*capacity+(c - 1)];
+                uint x = ceil(log2(M[i*capacity + (c - 1)])); // gives the position of the msb: 000100 = 2
+
+                uint bit32pw = pow(2, (bit32 - 1));
+                if (bit32pw == (bit32pw & m)) { //1000 == 1000 <- (1000 & 1010) 
+                    cout << x << "; ";
+                    cout << i*32 +bit32 - 1<<" \tvalue: " << value[i*32 +bit32 - 1] << "\tweight: " << weight[i*32 +bit32 - 1] << endl;
+                    c -= weight[i*32 +bit32 - 1];
+                    capacita += weight[i*32 +bit32 - 1];
+                    worth += value[i*32 +bit32 - 1];
+                }
+                bit32--;
+
             }
         }
 
         cout << "Chosen items are:" << endl;
 
         int cap = capacity;
-        int worth = 0;
-        int capacita = 0;
-        /*for (int item = numelem - 1; item > -1; item--) { 
-            for (int c = cap - 1; c > -1; c--) {
-                if (M[item * (capacity) + c] != 0) {                    
-                    
-                    cout << "Value " << item << ": " << value[item];
-                    cout << "\t" << "Weight " << item << ": " << weight[item] << endl;
-                    capacita += weight[item];
-                    worth += value[item];
-                    cap = cap - weight[item];
-                    break;
-                } else if (M[item * (capacity) + c] == 0) {
-                    c = 0;
-                }
-            }
 
-        }*/
-        
-        for (int item = ceil(numelem/32.0) - 1; item > -1; item--) { //64/32 - 1 = 1; 61/32 - 1 = 0 != 1 wrong!!!; 
-            for (int c = cap - 1; c > -1; c--) {
-                if (M[item * (capacity) + c] != 0) {
-                    
-                    int x = 32-log2(M[item * (capacity) + c]); // M[63] = 2^28; 32 - log2(2^28) = 4; value[(numelem - 4 - 1)*capacity + c]
-                    
-                    
-                    cout << "Value " << item << ": " << value[(numelem - x - 1)*capacity + c];
-                    cout << "\t" << "Weight " << item << ": " << weight[(numelem - x - 1)*capacity + c] << endl;
-                    capacita += weight[(numelem - x - 1)*capacity + c];
-                    worth += value[(numelem - x - 1)*capacity + c];
-                    cap = cap - weight[(numelem - x - 1)*capacity + c];
-                    break;
-                } else if (M[item * (capacity) + c] == 0) {
-                    c = 0;
-                }
-            }
-
-        }
-
-        cout << "SumWeight: " << sum << "\t Capacity: " << capacity << "\n";
-        cout << "Knapsack's worth: " << worth << endl;
+        cout << "SumWeight: " << sum << "\t Capacity: " << capacity << endl; 
+        cout << "Knapsack's worth: " << worth << "\t Weight of the selected objects: " << capacita << endl;
         cout << "run_time: " << run_time / numelem * 1.0 << endl;
         run_time = 0;
 
@@ -344,11 +324,9 @@ public:
     }
 
     void cleanUp() {
-        checkError(clReleaseMemObject(in_even_mem));
-        checkError(clReleaseMemObject(out_even_mem));
-        checkError(clReleaseMemObject(in_odd_mem));
-        checkError(clReleaseMemObject(out_odd_mem));
         checkError(clReleaseMemObject(m_d_mem));
+        checkError(clReleaseMemObject(f0_mem));
+        checkError(clReleaseMemObject(f1_mem));
         checkError(clReleaseProgram(program));
         checkError(clReleaseContext(context));
         checkError(clReleaseCommandQueue(queue));
@@ -531,10 +509,10 @@ public:
             cerr << "BAD_ALLOC CAUGHT: try with smaller 'numelem' number" << e << endl;
             exit(1);
         }
-        vector<int>::iterator its = max_element(m_d.begin(),m_d.end());
-        for(int i = 0; i < capacity; i++)
-            cout << "m_d"<< i<<" "<<m_d[i] << endl;
-        cout << "\n\n" << *its <<endl;
+        
+        for (int i = 0; i < capacity; i++)
+            cout << "m_d" << i << " " << m_d[i] << endl;
+        
         vector<int>::iterator it = M.begin()+(j - 1) * capacity;
         M.insert(it, m_d.begin(), m_d.end());
         // http://stackoverflow.com/questions/8848575/fastest-way-to-reset-every-value-of-stdvectorint-to-0
@@ -578,18 +556,18 @@ int main(int argc, char** argv) {
 
             //SWAPPING TWO BUFFERS
             if (k % 2 == 0) {
-                ksack.setKernelArgs(ksack.f0_mem, ksack.f1_mem, cmax, total_elements, k, k%32);
+                ksack.setKernelArgs(ksack.f0_mem, ksack.f1_mem, cmax, total_elements, k, k % 32);
             } else {
-                ksack.setKernelArgs(ksack.f1_mem, ksack.f0_mem, cmax, total_elements, k, k%32);
+                ksack.setKernelArgs(ksack.f1_mem, ksack.f0_mem, cmax, total_elements, k, k % 32);
             }
             ksack.executeNDRange(total_elements, i);
-            
-            if (k%32 == 31) {
+
+            if (k % 32 == 31) {
                 ksack.readBuffer_m_d_FromDevice();
                 //memcpy(M + k*capacity, m_d, sizeof (int)*capacity);
                 ksack.writeToM(k_M);
                 ksack.writeBuffer_m_d_ToDevice(); //resets m_d_mem 
-                bit_count = 0; 
+                bit_count = 0;
                 k_M += 1;
             }
         }
