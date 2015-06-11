@@ -16,7 +16,7 @@
 #include <random>
 #include <algorithm>
 
-#define NUMELEM 64
+#define NUMELEM 63
 using namespace std;
 
 class Knapsack {
@@ -250,23 +250,7 @@ public:
 
     void printResults() {
         cout << "\nPRINTOUT OF THE RESULTS: " << endl;
-        cout << "*************************************************" << endl;
-
-        /*
-             cout << "Evolution of the Knapsack worth F[x]: ";
-             //*logfile << "Evolution of the Knapsack worth F[x]: ";
-            for (int i = 0; i < capacity + 1; i++) {
-                if (numelem % 2 == 0) {
-                    cout << f0[i] << " ";
-         *logfile << f0[i] << " ";
-                } else {
-                    cout << *(f1 + i) << " ";
-         *logfile << *(f1 + i) << " ";
-                }
-
-            }*/
-
-        cout << endl;
+        cout << "*************************************************" << endl << endl;
         cout << "Matrix of decisions M[items][capacity]: " << endl;
 
         for (int i = 0; i < ceil(numelem / 32.0) * capacity; i++) {
@@ -539,7 +523,7 @@ int main(int argc, char** argv) {
         ksack.createMemoryObjects();
 
         int sumK = 0;
-        int bit_count = 0;
+        
         int k_M = 1;
         int total_elements = 0;
         int cmax = 0;
@@ -567,11 +551,17 @@ int main(int argc, char** argv) {
                 //memcpy(M + k*capacity, m_d, sizeof (int)*capacity);
                 ksack.writeToM(k_M);
                 ksack.writeBuffer_m_d_ToDevice(); //resets m_d_mem 
-                bit_count = 0;
+                
                 k_M += 1;
             }
         }
-
+      
+        if (numelem % 32 != 0) {
+                ksack.readBuffer_m_d_FromDevice();
+                //memcpy(M + k*capacity, m_d, sizeof (int)*capacity);
+                ksack.writeToM(k_M);
+            }
+        
         ksack.printResults();
 
     }//for device
