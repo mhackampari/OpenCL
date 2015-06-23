@@ -16,7 +16,8 @@
 #include <random>
 #include <algorithm>
 
-#define NUMELEM 63
+#define NUMELEM 240
+#define CAPACITY 100
 using namespace std;
 
 class Knapsack {
@@ -28,7 +29,7 @@ class Knapsack {
                         output_f[c] = input_f[c - weightk] + pk;\
                         m_d[c-1] += pown(2.0,i);\
                     }\
-                else{\
+                    else{\
                     output_f[c] = input_f[c];\
                     }\
                 }\
@@ -47,8 +48,8 @@ private:
     cl_mem in;
     cl_ulong run_time;
 
-    vector<int> m_d;
-    vector<int> M; //allocate dynamically in execute phase
+    vector<unsigned int> m_d;
+    vector<unsigned int> M; //allocate dynamically in execute phase
     cl_uint num;
 
     vector<cl_platform_id> platforms;
@@ -84,7 +85,8 @@ public:
             value[i] = weight[i] + 50;
         }
 
-        capacity = sum / 50;
+        //capacity = sum / 50;
+        capacity = CAPACITY;
 
         vector<int>::iterator it_weight, it_value;
         it_weight = weight.begin();
@@ -137,7 +139,7 @@ public:
         checkError(err);
         f0_mem = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof (int)*(capacity + 1), NULL, &err);
         checkError(err);
-        m_d_mem = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof (int)*(capacity), NULL, &err);
+        m_d_mem = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof (unsigned int)*(capacity), NULL, &err);
         checkError(err);
 
     }
@@ -157,21 +159,21 @@ public:
         checkError(err);
         err = clEnqueueWriteBuffer(queue, out, CL_TRUE, 0, sizeof (capacity)*(capacity + 1), output, 0, NULL, NULL);
         checkError(err);
-        err = clEnqueueWriteBuffer(queue, m_d_mem, CL_TRUE, 0, sizeof (capacity)*(capacity), m_d.data(), 0, NULL, NULL);
+        err = clEnqueueWriteBuffer(queue, m_d_mem, CL_TRUE, 0, sizeof (unsigned int)*(capacity), m_d.data(), 0, NULL, NULL);
         checkError(err);
 
     }
 
     void writeBuffer_m_d_ToDevice() {
 
-        err = clEnqueueWriteBuffer(queue, m_d_mem, CL_TRUE, 0, sizeof (capacity)*(capacity), m_d.data(), 0, NULL, NULL);
+        err = clEnqueueWriteBuffer(queue, m_d_mem, CL_TRUE, 0, sizeof (unsigned int)*(capacity), m_d.data(), 0, NULL, NULL);
         checkError(err);
 
     }
 
     void readBufferFromDevice(cl_mem &output_mem, int* output) {
 
-        err = clEnqueueReadBuffer(queue, m_d_mem, CL_TRUE, 0, sizeof (int)*capacity, m_d.data(), 0, NULL, NULL);
+        err = clEnqueueReadBuffer(queue, m_d_mem, CL_TRUE, 0, sizeof (unsigned int)*capacity, m_d.data(), 0, NULL, NULL);
         checkError(err);
 
         err = clEnqueueReadBuffer(queue, output_mem, CL_TRUE, 0, sizeof (int)*(capacity + 1), output, 0, NULL, NULL);
@@ -180,7 +182,7 @@ public:
 
     void readBuffer_m_d_FromDevice() {
 
-        err = clEnqueueReadBuffer(queue, m_d_mem, CL_TRUE, 0, sizeof (int)*capacity, m_d.data(), 0, NULL, NULL);
+        err = clEnqueueReadBuffer(queue, m_d_mem, CL_TRUE, 0, sizeof (unsigned int)*capacity, m_d.data(), 0, NULL, NULL);
         checkError(err);
 
         //err = clEnqueueReadBuffer(queue, output_mem, CL_TRUE, 0, sizeof (int)*(capacity + 1), output, 0, NULL, NULL);
@@ -255,34 +257,35 @@ public:
 
         for (int i = 0; i < ceil(numelem / 32.0) * capacity; i++) {
 
-            uint x = ceil(log2(M[i]));
-            cout << i<< ": " << x << "; \n";
+            unsigned int x = ceil(log2(M[i])); //x is the position 0...31
+            cout << i << ": # of bits: " << x << "\t M[]: " << M[i] << "\n";
             if ((i + 1) % (capacity) == 0) {
                 cout << "***" << endl;
             }
         }
 
         int c = capacity;
-        int bit = pow(2, 31);
+        unsigned int bit = pow(2, 31);
         int bit32 = 32;
         int worth = 0;
         int capacita = 0;
-        
-        for (int i = ceil(numelem / 32.0)-1; i >= 0; i--) {
+
+        for (int i = ceil(numelem / 32.0) - 1; i >= 0; i--) {
             bit32 = 32;
             cout << "**numelem / 32.0**" << endl;
-            while (bit32 > 0) {
+            while (bit32 > 0 && c > 0) {
 
-                uint m = M[i*capacity+(c - 1)];
-                uint x = ceil(log2(M[i*capacity + (c - 1)])); // gives the position of the msb: 000100 = 2
+                unsigned int m = M[i * capacity + (c - 1)];
+                unsigned int x = ceil(log2(M[i * capacity + (c - 1)])); // gives the position of the msb: 000100 = 2
 
-                uint bit32pw = pow(2, (bit32 - 1));
-                if (bit32pw == (bit32pw & m)) { //1000 == 1000 <- (1000 & 1010) 
+                unsigned int bit32pw = pow(2, (bit32 - 1));
+                if (bit32pw == (bit32pw & m)) { //binary: 1000 == 1000 <- (1000 & 1010)
+                    cout << "M" << i * capacity + (c - 1) << ": " << M[i * capacity + (c - 1)] << endl;
                     cout << x << "; ";
-                    cout << i*32 +bit32 - 1<<" \tvalue: " << value[i*32 +bit32 - 1] << "\tweight: " << weight[i*32 +bit32 - 1] << endl;
-                    c -= weight[i*32 +bit32 - 1];
-                    capacita += weight[i*32 +bit32 - 1];
-                    worth += value[i*32 +bit32 - 1];
+                    cout << i * 32 + bit32 - 1 << " \tvalue: " << value[i * 32 + bit32 - 1] << "\tweight: " << weight[i * 32 + bit32 - 1] << endl;
+                    c -= weight[i * 32 + bit32 - 1];
+                    capacita += weight[i * 32 + bit32 - 1];
+                    worth += value[i * 32 + bit32 - 1];
                 }
                 bit32--;
 
@@ -293,7 +296,7 @@ public:
 
         int cap = capacity;
 
-        cout << "SumWeight: " << sum << "\t Capacity: " << capacity << endl; 
+        cout << "SumWeight: " << sum << "\t Capacity: " << capacity << endl;
         cout << "Knapsack's worth: " << worth << "\t Weight of the selected objects: " << capacita << endl;
         cout << "run_time: " << run_time / numelem * 1.0 << endl;
         run_time = 0;
@@ -493,18 +496,27 @@ public:
             cerr << "BAD_ALLOC CAUGHT: try with smaller 'numelem' number" << e << endl;
             exit(1);
         }
-        
-        for (int i = 0; i < capacity; i++)
-            cout << "m_d" << i << " " << m_d[i] << endl;
-        
-        vector<int>::iterator it = M.begin()+(j - 1) * capacity;
+
+
+
+        vector<unsigned int>::iterator it = M.begin()+(j - 1) * capacity;
         M.insert(it, m_d.begin(), m_d.end());
+
+        for (int i = 0; i < capacity; i++) {
+            if (m_d[i]  != M[i + (j - 1) * capacity]) {
+                cout << "\n!!!!!!!!!!!!!!!!!!!!!m_d<0" << i << " " << m_d[i] << "  M: " << M[i + (j - 1) * capacity] << endl;
+                system("pause");
+            }
+
+            cout << "m_d" << i << " " << m_d[i] << "\tM" << i + (j - 1) * capacity << ": " << M[i + (j - 1) * capacity] << endl;
+        }
+
         // http://stackoverflow.com/questions/8848575/fastest-way-to-reset-every-value-of-stdvectorint-to-0
         m_d.assign(capacity, 0);
 
     }
 
-    vector<int>::iterator getMd() {
+    vector<unsigned int>::iterator getMd() {
         return m_d.begin();
     }
 
@@ -523,7 +535,7 @@ int main(int argc, char** argv) {
         ksack.createMemoryObjects();
 
         int sumK = 0;
-        
+
         int k_M = 1;
         int total_elements = 0;
         int cmax = 0;
@@ -537,36 +549,41 @@ int main(int argc, char** argv) {
             sumK = sumK - ksack.getWeight(k);
             cmax = max(capacity - sumK, ksack.getWeight(k));
             total_elements = capacity - cmax + 1;
+            if (total_elements > 0) { //in case one element exceeds the whole capacity
 
-            //SWAPPING TWO BUFFERS
-            if (k % 2 == 0) {
-                ksack.setKernelArgs(ksack.f0_mem, ksack.f1_mem, cmax, total_elements, k, k % 32);
-            } else {
-                ksack.setKernelArgs(ksack.f1_mem, ksack.f0_mem, cmax, total_elements, k, k % 32);
+                //SWAPPING TWO BUFFERS
+                if (k % 2 == 0) {
+                    ksack.setKernelArgs(ksack.f0_mem, ksack.f1_mem, cmax, total_elements, k, k % 32);
+                } else {
+                    ksack.setKernelArgs(ksack.f1_mem, ksack.f0_mem, cmax, total_elements, k, k % 32);
+                }
+                ksack.executeNDRange(total_elements, i);
             }
-            ksack.executeNDRange(total_elements, i);
 
             if (k % 32 == 31) {
                 ksack.readBuffer_m_d_FromDevice();
                 //memcpy(M + k*capacity, m_d, sizeof (int)*capacity);
                 ksack.writeToM(k_M);
                 ksack.writeBuffer_m_d_ToDevice(); //resets m_d_mem 
-                
+
                 k_M += 1;
             }
-        }
-      
-        if (numelem % 32 != 0) {
-                ksack.readBuffer_m_d_FromDevice();
-                //memcpy(M + k*capacity, m_d, sizeof (int)*capacity);
-                ksack.writeToM(k_M);
-            }
-        
-        ksack.printResults();
 
+        }
+
+        if (numelem % 32 != 0) {
+            ksack.readBuffer_m_d_FromDevice();
+            //memcpy(M + k*capacity, m_d, sizeof (int)*capacity);
+            ksack.writeToM(k_M);
+        }
+
+
+        ksack.printResults();
+        system("pause");
     }//for device
 
     ksack.cleanUp();
     return 0;
 }
 
+//http://stackoverflow.com/questions/3857981/rationalizing-what-is-going-on-in-my-simple-opencl-kernel-in-regards-to-global-m/3858174#3858174
