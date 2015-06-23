@@ -1277,3 +1277,4 @@ string Knapsack::getErrorCode(int e) {
         default:
             return "unknown error code";
     }
+}
