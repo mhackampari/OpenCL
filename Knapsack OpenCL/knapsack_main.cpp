@@ -22,7 +22,7 @@ using namespace std;
 
 class Knapsack {
     const string kernelString =
-            "void kernel knapsack(global int *input_f, global int *output_f, global int *m_d,  int cmax, int weightk, int pk, int maxelem, int i){\
+            "void kernel knapsack(global int *input_f, global int *output_f, global uint *m_d,  int cmax, int weightk, int pk, int maxelem, int i){\
                 int c = get_global_id(0)+cmax;\
                 if(get_global_id(0)<maxelem){\
                     if(input_f[c] < input_f[c - weightk] + pk){\
@@ -135,9 +135,9 @@ public:
 
     void createMemoryObjects() {
 
-        f1_mem = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof (int)*(capacity + 1), NULL, &err);
+        f1_mem = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof (unsigned int)*(capacity + 1), NULL, &err);
         checkError(err);
-        f0_mem = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof (int)*(capacity + 1), NULL, &err);
+        f0_mem = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof (unsigned int)*(capacity + 1), NULL, &err);
         checkError(err);
         m_d_mem = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof (unsigned int)*(capacity), NULL, &err);
         checkError(err);
@@ -155,9 +155,9 @@ public:
 
     void writeBufferToDevice(cl_mem& in, cl_mem& out, int* input, int* output) {
 
-        err = clEnqueueWriteBuffer(queue, in, CL_TRUE, 0, sizeof (int)*(capacity + 1), input, 0, NULL, NULL);
+        err = clEnqueueWriteBuffer(queue, in, CL_TRUE, 0, sizeof (unsigned int)*(capacity + 1), input, 0, NULL, NULL);
         checkError(err);
-        err = clEnqueueWriteBuffer(queue, out, CL_TRUE, 0, sizeof (capacity)*(capacity + 1), output, 0, NULL, NULL);
+        err = clEnqueueWriteBuffer(queue, out, CL_TRUE, 0, sizeof (unsigned int)*(capacity + 1), output, 0, NULL, NULL);
         checkError(err);
         err = clEnqueueWriteBuffer(queue, m_d_mem, CL_TRUE, 0, sizeof (unsigned int)*(capacity), m_d.data(), 0, NULL, NULL);
         checkError(err);
@@ -176,7 +176,7 @@ public:
         err = clEnqueueReadBuffer(queue, m_d_mem, CL_TRUE, 0, sizeof (unsigned int)*capacity, m_d.data(), 0, NULL, NULL);
         checkError(err);
 
-        err = clEnqueueReadBuffer(queue, output_mem, CL_TRUE, 0, sizeof (int)*(capacity + 1), output, 0, NULL, NULL);
+        err = clEnqueueReadBuffer(queue, output_mem, CL_TRUE, 0, sizeof (unsigned int)*(capacity + 1), output, 0, NULL, NULL);
         checkError(err);
     }
 
