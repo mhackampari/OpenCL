@@ -17,7 +17,7 @@ void Knapsack::queryOclPlatformInfo(fstream *logfile) {
             platforms, // list of OpenCL found 
             NULL); //stores the actual number of platforms present
 
-    for (int i = 0; i < num_platforms; i++) {
+    for (unsigned int i = 0; i < num_platforms; i++) {
         cout << "*******************\n";
         *logfile << "*******************\n";
         for (int j = 0; j < sizeof (platform_const_value) / sizeof (cl_platform_info); j++) {
@@ -944,10 +944,7 @@ void Knapsack::executeComputation(int i, fstream *logfile) {
 
         //segmentation fault can be caused because of max memory limit(ram)
         memcpy(M + k*capacity, m_d, sizeof (int)*capacity);
-
-        for (int i = 0; i < capacity; i++) {
-            *(m_d + i) = 0;
-        }
+        memset(m_d, 0, sizeof(capacity)*capacity);
 
     }
     timer.stop();
@@ -1027,7 +1024,7 @@ void Knapsack::printResults(fstream *logfile) {
 
     }
 
-    cout << "\nCAPACITA: " << capacita << endl;
+    cout << "\nWeight of the Knapsack: " << capacita << endl;
     for (int i = 0; i < capacity + 1; i++) {
         *(f1 + i) = 0; //f[i] = 0;
         *(f0 + i) = 0;
