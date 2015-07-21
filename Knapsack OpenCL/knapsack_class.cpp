@@ -81,7 +81,6 @@ void Knapsack::queryOclDeviceInfo(int i, fstream *logfile) {
 
     size = 0;
 
-
     err = clGetDeviceInfo(device_id[i],
             CL_DRIVER_VERSION,
             0,
@@ -757,7 +756,7 @@ void Knapsack::setKernelArgs(cl_mem &input, cl_mem &output, int weightk, int val
             &valuek //a pointer of data used as the argument
             );
     checkError(err);
-    
+
     err = clSetKernelArg(
             kernel, //valid kernel object
             6, //the specific argument of a kernel
@@ -789,7 +788,7 @@ void Knapsack::even(int weightk, int valuek, int i, fstream* logfile) {
             1, // the work problem dimensions
             NULL, //must be NULL
             global_work_items, // work-items for each dimension
-            local_work_items, // work-group size for each dimension
+            *local_work_items == 0 ? NULL : local_work_items, // work-group size for each dimension
             0, // number of event in the event list
             NULL, // list of events that needs to complete before this executes
             &prof_event // event object to return on completion
@@ -830,7 +829,7 @@ void Knapsack::odd(int weightk, int valuek, int i, fstream* logfile) {
             1, // the work problem dimensions
             NULL, //must be NULL
             global_work_items, // work-items for each dimension
-            local_work_items, // work-group size for each dimension
+            *local_work_items == 0 ? NULL : local_work_items, // work-group size for each dimension
             0, // number of event in the event list
             NULL, // list of events that needs to complete before this executes
             &prof_event // event object to return on completion
@@ -908,43 +907,47 @@ Knapsack::Knapsack(TestData& t) {
 
 }
 
-void Knapsack::executeComputation(int i, fstream *logfile) {
+void Knapsack::executeComputation(int i, fstream *logfile, int local_threads) {
     int sumK = sumWeight;
     Timer timer;
     Chrono chrono;
     timer.start();
     chrono.startChrono();
     run_time = 0;
+
     for (int k = 0; k < numelem; k++) {
 
         sumK = sumK - weight[k];
         cmax = 0;
         cmax = max(capacity - sumK, weight[k]);
         total_elements = (size_t) (capacity - cmax + 1);
+
         *global_work_items = total_elements;
-        *local_work_items = getLocalWorkItems(total_elements, *device_max_work_group_size, i);
-        *global_work_items = getGlobalWorkItems(total_elements, *local_work_items, i);
-        
+        if (local_threads != 0) {
+            *local_work_items = getLocalWorkItems(total_elements, local_threads>*device_max_work_group_size ? *device_max_work_group_size : local_threads, i);
+            *global_work_items = getGlobalWorkItems(total_elements, *local_work_items, i);
+        }
         *logfile << "global_work_items: " << *global_work_items << endl;
         *logfile << "local_work_items: " << *local_work_items << endl;
         *logfile << endl;
 
         if (k % 2 == 0) {
             writeBufferToDevice(in_even_mem, out_even_mem, f0, f1);
-            setKernelArgs(in_even_mem, out_even_mem, weight[k], value[k], (int)total_elements);
+            setKernelArgs(in_even_mem, out_even_mem, weight[k], value[k], (int) total_elements);
             even(weight[k], value[k], i, logfile);
             readBufferFromDevice(out_even_mem, f1, logfile);
 
         } else {
             writeBufferToDevice(in_odd_mem, out_odd_mem, f1, f0);
-            setKernelArgs(in_odd_mem, out_odd_mem, weight[k], value[k], (int)total_elements);
+            setKernelArgs(in_odd_mem, out_odd_mem, weight[k], value[k], (int) total_elements);
             odd(weight[k], value[k], i, logfile);
             readBufferFromDevice(out_odd_mem, f0, logfile);
         }
 
         //segmentation fault can be caused because of max memory limit(ram)
-        memcpy(M + k*capacity, m_d, sizeof (int)*capacity);
-        memset(m_d, 0, sizeof(capacity)*capacity);
+
+        memcpy(&M[k * capacity], m_d, sizeof (int)*capacity);
+        memset(m_d, 0, sizeof (capacity) * capacity);
 
     }
     timer.stop();
@@ -1003,18 +1006,18 @@ void Knapsack::printResults(fstream *logfile) {
     }
     cout << endl;
 
-    cout << "Chosen items are:" << endl;
-    *logfile << "Chosen items are:" << endl;
+    //cout << "Chosen items are:" << endl;
+    //*logfile << "Chosen items are:" << endl;
     int cap = capacity;
     int capacita = 0;
     for (int item = numelem - 1; item > -1; item--) {
         for (int c = cap - 1; c > -1; c--) {
             if (M[item * (capacity) + c] != 0) {
-                cout << "Value " << item << ": " << value[item];
-                cout << "\t" << "Weight " << item << ": " << weight[item] << endl;
+                //cout << "Value " << item << ": " << value[item];
+                //cout << "\t" << "Weight " << item << ": " << weight[item] << endl;
                 capacita += weight[item];
-                *logfile << "Value: " << value[item];
-                *logfile << "\t" << "Weight: " << weight[item] << endl;
+                //*logfile << "Value: " << value[item];
+                //*logfile << "\t" << "Weight: " << weight[item] << endl;
                 cap = cap - weight[item];
                 break;
             } else if (M[item * (capacity) + c] == 0) {

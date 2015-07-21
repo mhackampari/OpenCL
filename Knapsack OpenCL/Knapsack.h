@@ -79,7 +79,7 @@ public:
     void writeBufferToDevice(cl_mem &i, cl_mem &o, int *in, int *out);
     void setKernelArgs(cl_mem &i, cl_mem &o, int wk, int vk, int maxelem);
     void readBufferFromDevice(cl_mem &output_mem, int *output, fstream *);
-    void executeComputation(int i, fstream *);
+    void executeComputation(int i, fstream *, int local_threads);
     void printResults(fstream *);
     void checkError(cl_int);
     string getErrorCode(int e);
