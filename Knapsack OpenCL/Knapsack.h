@@ -58,6 +58,9 @@ class Knapsack {
     int *f1, *f0;
     int numelem, cmax;
     double run_time;
+    long chrono_time; 
+    float timer_time;
+    string device_name_str;
 
     //initialize variables
 public:

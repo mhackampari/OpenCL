@@ -38,7 +38,7 @@ bool Chrono::isRunningChrono() {
     return running;
 }
 
-//results are ms
+//results are in ms
 
 unsigned long Chrono::getTimeChrono() {
     if (running) {

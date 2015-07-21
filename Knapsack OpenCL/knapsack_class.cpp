@@ -135,6 +135,7 @@ void Knapsack::queryOclDeviceInfo(int i, fstream *logfile) {
 
     cout << "\nCL_DEVICE_NAME: " << string(device_name);
     *logfile << "\nCL_DEVICE_NAME: " << string(device_name);
+    device_name_str = string(device_name);
     free(device_name);
 
     err = clGetDeviceInfo(device_id[i],
@@ -542,14 +543,15 @@ void Knapsack::createProgramBuild(int i, fstream *logfile) {
 
     char *x = (char *) malloc(sizeof (char)*(sourceKernel.length() + 1));
     strcpy(x, sourceKernel.c_str());
-
+    //decomment to see kernel output on video
+    /*
     cout << "\nKERNEL OUTPUT: \n";
     cout << string(x);
     cout << endl;
     *logfile << "\nKERNEL OUTPUT: \n";
     *logfile << string(x);
     *logfile << endl;
-
+    */
 
     program = clCreateProgramWithSource(
             context,
@@ -600,7 +602,7 @@ void Knapsack::createMemObjects(fstream *logfile) {
 
     /*Enqueues a command to write data from host to memory to a buffer object.
      *This functional is typically used to provide data for the kernel processing. 
-     */
+     */ 
 
     in_even_mem = clCreateBuffer(
             context, // a valid context
@@ -914,7 +916,7 @@ void Knapsack::executeComputation(int i, fstream *logfile, int local_threads) {
     timer.start();
     chrono.startChrono();
     run_time = 0;
-
+    
     for (int k = 0; k < numelem; k++) {
 
         sumK = sumK - weight[k];
@@ -927,9 +929,6 @@ void Knapsack::executeComputation(int i, fstream *logfile, int local_threads) {
             *local_work_items = getLocalWorkItems(total_elements, local_threads>*device_max_work_group_size ? *device_max_work_group_size : local_threads, i);
             *global_work_items = getGlobalWorkItems(total_elements, *local_work_items, i);
         }
-        *logfile << "global_work_items: " << *global_work_items << endl;
-        *logfile << "local_work_items: " << *local_work_items << endl;
-        *logfile << endl;
 
         if (k % 2 == 0) {
             writeBufferToDevice(in_even_mem, out_even_mem, f0, f1);
@@ -945,17 +944,15 @@ void Knapsack::executeComputation(int i, fstream *logfile, int local_threads) {
         }
 
         //segmentation fault can be caused because of max memory limit(ram)
-
         memcpy(&M[k * capacity], m_d, sizeof (int)*capacity);
         memset(m_d, 0, sizeof (capacity) * capacity);
 
     }
+   
     timer.stop();
     chrono.stopChrono();
-    cout << "Total time with Timer: " << timer.getTime() << endl;
-    *logfile << "Total time with Timer: " << timer.getTime() << endl;
-    cout << "Total time with Chrono: " << chrono.getTimeChrono() << endl;
-    *logfile << "Total time with Chrono: " << chrono.getTimeChrono() << endl;
+    chrono_time = chrono.getTimeChrono();
+    timer_time = timer.getTime();
     timer.reset();
 
 }
@@ -995,7 +992,8 @@ void Knapsack::printResults(fstream *logfile) {
         }*/
 
     cout << "SumWeight: " << sumWeight << "\t Capacity: " << capacity << "\n";
-    cout << "\nKnapsack's worth: ";
+    *logfile << "SumWeight: " << sumWeight << "\t Capacity: " << capacity << "\n";
+    cout << "Knapsack's worth: ";
     *logfile << "\nKnapsack's worth: ";
     if (numelem % 2 == 0) {
         cout << f0[capacity] << endl;
@@ -1004,7 +1002,6 @@ void Knapsack::printResults(fstream *logfile) {
         cout << f1[capacity] << endl;
         *logfile << f1[capacity] << endl;
     }
-    cout << endl;
 
     //cout << "Chosen items are:" << endl;
     //*logfile << "Chosen items are:" << endl;
@@ -1027,15 +1024,17 @@ void Knapsack::printResults(fstream *logfile) {
 
     }
 
-    cout << "\nWeight of the Knapsack: " << capacita << endl;
-    for (int i = 0; i < capacity + 1; i++) {
-        *(f1 + i) = 0; //f[i] = 0;
-        *(f0 + i) = 0;
-    }
+    cout << "Weight of the Knapsack: " << capacita << endl;
+    
+    memset(f0, 0, sizeof(capacity)*(capacity+1));
+    memset(f1, 0, sizeof(capacity)*(capacity+1));
 
-    cout << "Profiling Info: " << run_time << endl;
-    *logfile << "Profiling Info: " << run_time << endl;
-
+    cout << device_name_str << " profiling time: " << run_time << endl;
+    *logfile << device_name_str << " profiling time: " << run_time << endl;
+    cout << "Acceleration Timer: " << timer_time << endl;
+    *logfile << "Acceleration Timer: " << timer_time << endl;
+    cout << "Acceleration Chrono: " << chrono_time << endl;
+    *logfile << "Acceleration Chrono: " << chrono_time << endl;
 
     cout << "*************************************************" << endl;
     cout << "END OF THE PRINTOUT" << endl;
