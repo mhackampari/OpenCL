@@ -640,9 +640,28 @@ void Knapsack::createMemObjects(fstream *logfile) {
             );
     checkError(err);
 
+    f0_mem = clCreateBuffer(
+            context, // a valid context
+            CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, // bit-field flag to specify
+            sizeof (int)*(capacity + 1), // size in bytes of the buffer to allocated
+            NULL, // pointer to buffer data to be copied from host
+            &err // returned error code
+            );
+    checkError(err);
+
+    f1_mem = clCreateBuffer(
+            context, // a valid context
+            CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, // bit-field flag to specify
+            sizeof (int)*(capacity + 1), // size in bytes of the buffer to allocated
+            NULL, // pointer to buffer data to be copied from host
+            &err // returned error code
+            );
+    checkError(err);
+
+
     m_d_mem = clCreateBuffer(
             context, // a valid context
-            CL_MEM_WRITE_ONLY, // bit-field flag to specify
+            CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, // bit-field flag to specify
             sizeof (int)*capacity, // size in bytes of the buffer to allocated
             NULL, // pointer to buffer data to be copied from host
             &err // returned error code
@@ -851,7 +870,7 @@ void Knapsack::odd(int weightk, int valuek, int i, fstream* logfile) {
 
 }
 
-void Knapsack::readBufferFromDevice(cl_mem &output_mem, int* output, fstream *logfile) {
+void Knapsack::readBufferFromDevice(fstream *logfile) {
 
     /* Enqueues a command to read data from a buffer object into host memory.
      * This function is typically used to READ RESULTS FROM the KERNEL execution
@@ -874,20 +893,6 @@ void Knapsack::readBufferFromDevice(cl_mem &output_mem, int* output, fstream *lo
         *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
     }
 
-    err = clEnqueueReadBuffer(
-            queue, //valid command queue 
-            output_mem, //memory buffer object to write to
-            CL_TRUE, // indicate blocking write
-            0, //the offset in the buffer object to write to
-            sizeof (int)*(capacity + 1), //size in bytes of data to write to
-            output, //pointer to buffer in host mem to read data from
-            0, //number of events in the event list 
-            NULL, //list of events that needs to complete before this executes
-            NULL); //event object to return on completion
-    if (err != CL_SUCCESS) {
-        cout << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-        *logfile << "\n!!!" << Knapsack::getErrorCode(err) << endl;
-    }
 }
 
 Knapsack::Knapsack(TestData& t) {
@@ -916,7 +921,7 @@ void Knapsack::executeComputation(int i, fstream *logfile, int local_threads) {
     timer.start();
     chrono.startChrono();
     run_time = 0;
-    
+
     for (int k = 0; k < numelem; k++) {
 
         sumK = sumK - weight[k];
@@ -934,14 +939,21 @@ void Knapsack::executeComputation(int i, fstream *logfile, int local_threads) {
             writeBufferToDevice(in_even_mem, out_even_mem, f0, f1);
             setKernelArgs(in_even_mem, out_even_mem, weight[k], value[k], (int) total_elements);
             even(weight[k], value[k], i, logfile);
-            readBufferFromDevice(out_even_mem, f1, logfile);
+            
+            //readBufferFromDevice(out_even_mem, f1, logfile);
+            //unmapBuffer(out_even_mem, f1);
 
         } else {
+
             writeBufferToDevice(in_odd_mem, out_odd_mem, f1, f0);
             setKernelArgs(in_odd_mem, out_odd_mem, weight[k], value[k], (int) total_elements);
             odd(weight[k], value[k], i, logfile);
-            readBufferFromDevice(out_odd_mem, f0, logfile);
+            //readBufferFromDevice(out_odd_mem, f0, logfile);
+            //unmapBuffer(out_odd_mem, f0);
         }
+        
+        readBufferFromDevice(logfile);
+        //unmapBuffer();
 
         //segmentation fault can be caused because of max memory limit(ram)
         memcpy(&M[k * capacity], m_d, sizeof (int)*capacity);
@@ -979,7 +991,8 @@ void Knapsack::printResults(fstream *logfile) {
         }
 
         cout << endl;
-        cout << "Matrix of decisions M[items][capacity]: " << endl;
+     * */
+     cout << "Matrix of decisions M[items][capacity]: " << endl;
      *logfile << endl;
      *logfile << "Matrix of decisions M[items][capacity]: " << endl;
         for (int i = 0; i < numelem * capacity; i++) {
@@ -989,7 +1002,7 @@ void Knapsack::printResults(fstream *logfile) {
                 cout << endl;
         // *logfile << endl;
             }
-        }*/
+        }
 
     cout << "SumWeight: " << sumWeight << "\t Capacity: " << capacity << "\n";
     *logfile << "SumWeight: " << sumWeight << "\t Capacity: " << capacity << "\n";
@@ -1276,4 +1289,106 @@ string Knapsack::getErrorCode(int e) {
         default:
             return "unknown error code";
     }
+}
+
+void Knapsack::mapBuffers(cl_mem in, cl_mem out, int* inptr, int* outptr){
+    
+    //in realtà posso caricare solo un vettore poiché solo uno partecipa all'input
+    void* mapPtr1 = clEnqueueMapBuffer(
+                        queue,
+                        in,
+                        CL_TRUE,
+                        CL_MAP_WRITE,
+                        0,
+                        sizeof(capacity)*(capacity + 1),
+                        0,
+                        NULL,
+                        NULL,
+                        &err);
+    checkError(err);
+
+    void* mapPtr2 = clEnqueueMapBuffer(
+                        queue,
+                        out,
+                        CL_TRUE,
+                        CL_MAP_WRITE,
+                        0,
+                        sizeof(capacity)*(capacity + 1),
+                        0,
+                        NULL,
+                        NULL,
+                        &err);
+    checkError(err);
+    
+    memcpy(mapPtr1, inptr, sizeof(capacity)*(capacity + 1));
+    memcpy(mapPtr2, outptr, sizeof(capacity)*(capacity + 1));
+    
+    err = clEnqueueUnmapMemObject(
+                 queue,
+                 in,
+                 mapPtr1,
+                 0,
+                 NULL,
+                 NULL);
+    checkError(err);
+
+    err = clEnqueueUnmapMemObject(
+                 queue,
+                 out,
+                 mapPtr2,
+                 0,
+                 NULL,
+                 NULL);
+    checkError(err);
+
+}
+
+void Knapsack::unmapBuffer(cl_mem out, int* outPtr){
+    
+    void* outMapPtr = clEnqueueMapBuffer(
+                          queue,
+                          m_d_mem,
+                          CL_TRUE,
+                          CL_MAP_READ,
+                          0,
+                          sizeof(capacity)*capacity,
+                          0,
+                          NULL,
+                          NULL,
+                          &err);
+    checkError(err);
+    
+    void* out2MapPtr = clEnqueueMapBuffer(
+                          queue,
+                          out,
+                          CL_TRUE,
+                          CL_MAP_READ,
+                          0,
+                          sizeof(capacity)*(capacity+1),
+                          0,
+                          NULL,
+                          NULL,
+                          &err);
+    checkError(err);
+    
+    memcpy(m_d, outMapPtr, sizeof(int) *capacity);
+    memcpy(outPtr, out2MapPtr, sizeof(int) *capacity);
+
+    err = clEnqueueUnmapMemObject(
+                 queue,
+                 m_d_mem,
+                 outMapPtr,
+                 0,
+                 NULL,
+                 NULL);
+    checkError(err);
+    
+    err = clEnqueueUnmapMemObject(
+                 queue,
+                 out,
+                 out2MapPtr,
+                 0,
+                 NULL,
+                 NULL);
+    checkError(err);
 }

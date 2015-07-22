@@ -13,7 +13,6 @@
 int main(int argc, char** argv) {
     Chrono ch;
     Timer tm;
-    tm.start();
     ch.startChrono();
     fstream logfile;
     logfile.open("results_knapsack.txt", ios::out);
