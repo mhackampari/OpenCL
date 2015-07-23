@@ -10,6 +10,7 @@
 #include <iostream>
 #include <random>
 #include <chrono>
+#include <memory.h>
 
 using namespace std;
 
@@ -60,11 +61,11 @@ public:
             weight[i] = rand() % numelem + 1; //unifdist(random_engine); 
             sum += weight[i];
             value[i] = weight[i] + rand() % numelem + 1; //+ 50;
-            cout << i << "weight: " << weight[i] << "\t" << "value: " << value[i] << endl;
-            capacity = sum / 2;
-            cout << "Capacity: " << capacity << endl;
+            //cout << i << "\t" << "weight: " << weight[i] << "\t" << "value: " << value[i] << endl;
 
         }
+        capacity = sum / 2;
+        cout << "Capacity: " << capacity << endl;
     }
 
     ~TestData() {
@@ -145,52 +146,69 @@ public:
     }
 };
 
-void printResults(int capacity, int sumWeight, int numelem, int* f1, int* f0, int* M, int* weight, long runtime);
+void printResults(int capacity, int sumWeight, int numelem, int* f, int* M, int* weight, int* value, long runtime);
 
 int main(int argc, char** argv) {
-    int numelem[] = {100, 200, 300, 400, 500, 600, 700, 800, 900, 1000};
-    int capacity;
-    
+
+    int numelem[] = {5, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000};
+    Chrono c;
+
+    for (int i = 0; i < sizeof (numelem) / sizeof (int) - 8; i++) {
+        TestData *t = new TestData(numelem[i]);
+        int sumWeight = t->getSum();
+        int sumK = sumWeight;
+        int capacity = t->getCapacity();
+        int *value = (int *) calloc(numelem[i], sizeof (int));
+        int *weight = (int *) calloc(numelem[i], sizeof (int));
+        memcpy(value, t->getValue(), sizeof (int)*numelem[i]);
+        memcpy(weight, t->getWeight(), sizeof (int)*numelem[i]);
+        delete t;
+        int *f = (int *) calloc((capacity + 1), sizeof (int)); //f[0, ..., capacity]
+        //segmentation fault can be caused because of max memory limit(ram)
+        int *M = (int *) calloc(numelem[i] * (capacity + 1), sizeof (int)); //M[numelem][capacity]
+        if (M == NULL) cout << "NOT ENOUGH AVAILABLE SPACE!!!! TRY WITH LESS ELEMENTS\n";
+        
+        c.startChrono();
+        for (int k = 0; k < numelem[i]; k++) {
+
+            sumK = sumK - weight[k];
+            int cmax = 0;
+            cmax = max(capacity - sumK, weight[k]);
+
+            for (int c = capacity; c >= cmax; c--) {
+
+                if (f[c] < f[c - weight[k]] + value[k]) {
+                    f[c] = f[c - weight[k]] + value[k];
+                    M[capacity * k + c] = 1;
+                }
+            }
+
+        }
+        c.stopChrono();
+        printResults(capacity, sumWeight, numelem[i], f, M, weight, value, c.getTimeChrono());
+        delete M, f, value, weight;
+    }
 
     return 0;
 }
 
-printResults(int capacity, int sumWeight, int numelem, int* f1, int* f0, int* M, int* weight, long runtime) {
+void printResults(int capacity, int sumWeight, int numelem, int* f, int* M, int* weight, int* value, long runtime) {
 
     cout << "\nPRINTOUT OF THE RESULTS: " << endl;
     cout << "*************************************************" << endl;
-
     /*
-         cout << "Evolution of the Knapsack worth F[x]: ";
-         //*logfile << "Evolution of the Knapsack worth F[x]: ";
-        for (int i = 0; i < capacity + 1; i++) {
-            if (numelem % 2 == 0) {
-                cout << f0[i] << " ";
-     *logfile << f0[i] << " ";
-            } else {
-                cout << *(f1 + i) << " ";
-     *logfile << *(f1 + i) << " ";
-            }
-
-        }
-
-        cout << endl;
-     * */
     cout << "Matrix of decisions M[items][capacity]: " << endl;
-    for (int i = 0; i < numelem * capacity; i++) {
+    for (int i = 0; i < numelem * (capacity+1); i++) {
         cout << *(M + i) << "; ";
-        if ((i + 1) % (capacity) == 0) {
+        if ((i + 1) % (capacity+1) == 0) {
             cout << endl;
         }
     }
+     */
 
     cout << "SumWeight: " << sumWeight << "\t Capacity: " << capacity << "\n";
-    cout << "Knapsack's worth: ";
-    if (numelem % 2 == 0) {
-        cout << f0[capacity] << endl;
-    } else {
-        cout << f1[capacity] << endl;
-    }
+    cout << "Knapsack's worth: " << f[capacity] << endl;
+
 
     //cout << "Chosen items are:" << endl;
     int cap = capacity;
@@ -208,11 +226,9 @@ printResults(int capacity, int sumWeight, int numelem, int* f1, int* f0, int* M,
         }
 
     }
-    memset(f0, 0, sizeof (capacity)*(capacity + 1));
-    memset(f1, 0, sizeof (capacity)*(capacity + 1));
 
     cout << "Weight of the Knapsack: " << capacita << endl;
-    cout << " profiling time: " << runtime << endl;
+    cout << " profiling time: " << runtime*1L << "ms" <<endl;
     cout << "*************************************************" << endl;
     cout << "END OF THE PRINTOUT" << endl;
 
