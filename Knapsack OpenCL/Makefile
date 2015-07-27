@@ -1,8 +1,16 @@
 NAME = knapsack
 CXX = g++
-INCDIR = /opt/AMDAPPSDK-2.9-1/include/
-CXXFLAGS = -Wall -g -O3 -std=c++11 -I$(INCDIR) 
-LDFLAGS = -L/opt/AMDAPPSDK-2.9-1/lib/x86_64/ -lOpenCL
+INCDIR = $(AMDAPPSDKROOT)/include/
+LDFLAGS = -L$(AMDAPPSDKROOT)/lib/x86_64/ -lOpenCL
+CXXFLAGS = -Wall -std=c++11
+#run debug: DEBUG=1 make
+DEBUG ?= 1
+ifeq ($(DEBUG),1)
+CXXFLAGS += -g -DDEBUG
+	#@echo "ciao"
+else
+CXXFLAGS += -O3
+endif
 
 all: $(NAME)
 
@@ -10,23 +18,9 @@ $(NAME): Chrono.o knapsack_main.o knapsack_class.o TestData.o Timer.o
 	$(CXX) $^ -o $@ $(CXXFLAGS) $(LDFLAGS)
 
 %.o : %.cpp
-	$(CXX) -c $< $(CXXFLAGS) $(LDFLAGS) -lOpenCL
+	$(CXX) -c $< $(CXXFLAGS) -I$(INCDIR)
 
 clean :	
 	rm -f *.o 
 	rm -f $(NAME)
 
-
-#TARGET = $(shell find . -name "*.cpp" | head -n 1 | sed 's/\.cpp$$//')
-#CXXFLAGS = -O3 -g -Wall -Werror -ansi
-
-
-
-#%.o : %.cpp
-#	$(CXX) $(CXXFLAGS) -Iinclude/ -c $< -o $@
-
-#$(TARGET) : $(TARGET).o 
-#	$(CXX) $(CXXFLAGS) $< -lOpenCL -lpng  -o $@
-
-#clean :	
-#	rm -f *.o $(TARGET)

@@ -81,8 +81,9 @@ public:
     void executeMemObjects(cl_mem f_input, int *f, fstream *);
     void writeBufferToDevice(cl_mem &i, cl_mem &o, int *in, int *out);
     void mapBuffers(cl_mem in, cl_mem out, int* i, int* o);
+    void unmapBuffer(cl_mem in, int* o);
     void setKernelArgs(cl_mem &i, cl_mem &o, int wk, int vk, int maxelem);
-    void readBufferFromDevice(cl_mem &output_mem, int *output, fstream *);
+    void readBufferFromDevice(fstream *);
     void executeComputation(int i, fstream *, int local_threads);
     void printResults(fstream *);
     void checkError(cl_int);
