@@ -3,6 +3,7 @@
  * Author: terminator
  *
  * Created on July 22, 2015, 7:08 PM
+ * https://computing.llnl.gov/tutorials/openMP/
  */
 
 #include <cstdlib>
@@ -13,6 +14,8 @@
 #include <memory.h>
 #include <fstream>
 #include <omp.h>
+#include <thread>
+#include <time.h>
 
 using namespace std;
 
@@ -149,23 +152,31 @@ public:
 
 void printResults(int capacity, int sumWeight, int numelem, int* f, int* M,
 		int* weight, int* value, long runtime);
+void chronoVSomptime();
 
 int main(int argc, char** argv) {
+
 	fstream output_file;
-	output_file.open("results_knapsack_omp", ios_base::out);
-	Chrono c;
-	double timeomp = 0;
+	output_file.open("results_knapsack_omp3", ios_base::out);
+	Chrono chrono, echrono; //use chronoVSomptime() to see difference
+	double timeomp, tomp1, tomp2, total_time, etimeomp;
+	long timet = 0;
+	time_t t0, t1, et0, et1;
 	bool print = false;
 
 	int numelem[] = { 5, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000 };
 	unsigned int nelements = sizeof(numelem) / sizeof(int);
-	long time = 0;
 	const unsigned int ncycles = 100;
 
+	cout << "NUM MAX THREADS: " << omp_get_max_threads() << endl;
 	omp_set_num_threads(omp_get_max_threads());
-
+	echrono.startChrono();
+	time(&et0);
+	etimeomp = omp_get_wtime();
 	for (unsigned int i = 0; i < nelements; i++) {
-		time = 0;
+		timet = 0;
+		timeomp = 0;
+		total_time = 0;
 		cout << "ROUND: " << i << endl;
 		output_file << "ROUND: " << i << endl;
 		for (unsigned int j = 0; j < ncycles; j++) {
@@ -179,15 +190,17 @@ int main(int argc, char** argv) {
 			memcpy(value, t->getValue(), sizeof(int) * numelem[i]);
 			memcpy(weight, t->getWeight(), sizeof(int) * numelem[i]);
 			delete t;
-			int *f = (int *) calloc((capacity + 1), sizeof(int)); //f[0, ..., capacity]
+			int *f1 = (int *) calloc((capacity + 1), sizeof(int)); //f[0, ..., capacity]
+			int *f0 = (int *) calloc((capacity + 1), sizeof(int));
 			//segmentation fault can be caused because of max memory limit(ram)
 			int *M = (int *) calloc(numelem[i] * (capacity + 1), sizeof(int)); //M[numelem][capacity]
 			if (M == NULL)
 				cout
 						<< "NOT ENOUGH AVAILABLE SPACE!!!! TRY WITH LESS ELEMENTS\n";
 
-			c.startChrono();
-			timeomp = omp_get_wtime();
+			chrono.startChrono();
+			tomp1 = omp_get_wtime();
+			time(&t0);
 			for (int k = 0; k < numelem[i]; k++) {
 
 				sumK = sumK - weight[k];
@@ -195,40 +208,77 @@ int main(int argc, char** argv) {
 				cmax = max(capacity - sumK, weight[k]);
 				int c = capacity;
 
+				if (k % 2 == 0) {
+#pragma omp parallel for
+					for (c = capacity; c >= cmax; c--) {
+						//RACE CONDITION
 
-				#pragma omp parallel for
-				for (c = capacity; c >= cmax; c--) {
-
-					if (f[c] < f[c - weight[k]] + value[k]) {
-						f[c] = f[c - weight[k]] + value[k];
-						M[capacity * k + c] = 1;
+						if (f0[c] < f0[c - weight[k]] + value[k]) {
+							f1[c] = f0[c - weight[k]] + value[k];
+							M[capacity * k + c] = 1;
+						} else {
+							f1[c] = f0[c];
+						}
 					}
+				} else {
+#pragma omp parallel for
+					for (c = capacity; c >= cmax; c--) {
+
+						//RACE CONDITION
+
+						if (f1[c] < f1[c - weight[k]] + value[k]) {
+							f0[c] = f1[c - weight[k]] + value[k];
+							M[capacity * k + c] = 1;
+						} else {
+							f0[c] = f1[c];
+						}
+					}
+
+				}
+
+				chrono.stopChrono();
+				tomp2 = omp_get_wtime();
+				time(&t1);
+				total_time += difftime(t1, t0);
+				timeomp += tomp2 - tomp1;
+				timet += chrono.getTimeChrono();
+
+				if (print) {
+					if (numelem[i] % 2 == 0)
+						printResults(capacity, sumWeight, numelem[i], f0, M,
+								weight, value, chrono.getTimeChrono());
+					else
+						printResults(capacity, sumWeight, numelem[i], f1, M,
+								weight, value, chrono.getTimeChrono());
 				}
 
 			}
-			c.stopChrono();
-			timeomp = omp_get_wtime() - timeomp;
-			time += c.getTimeChrono();
-			if (print)
-				printResults(capacity, sumWeight, numelem[i], f, M, weight,
-						value, c.getTimeChrono());
-			delete M;
-			delete f;
-			delete value;
-			delete weight;
+			free(M);
+			free(f0);
+			free(f1);
+			free(value);
+			free(weight);
 		}
 
-		time = time / (double) ncycles;
+		timet = timet / (double) ncycles;
 		timeomp = timeomp / (double) ncycles;
+		total_time = total_time / (double) ncycles;
 
 		cout << "# of elements: " << numelem[i] << endl;
-		cout << "Average time: " << time << endl;
+		cout << "Average time[ms]: " << timet << endl;
 		cout << "Omp time: " << timeomp << endl;
+		cout << "Total time: " << total_time << endl;
 
 		output_file << "# of elements: " << numelem[i] << endl;
-		output_file << "Average time: " << time << endl;
+		output_file << "Average time: " << timet << endl;
+		output_file << "Omp time: " << timeomp << endl;
 	}
-
+	echrono.stopChrono();
+	time(&et1);
+	etimeomp = omp_get_wtime() - etimeomp;
+	cout << "EX-chrono time[ms]: " << echrono.getTimeChrono() << endl;
+	cout << "Ex-Omp time: " << etimeomp << endl;
+	cout << "Ex-time : " << difftime(et1, et0) << endl;
 	output_file.close();
 	return 0;
 }
@@ -249,6 +299,7 @@ void printResults(int capacity, int sumWeight, int numelem, int* f, int* M,
 	 */
 
 	cout << "SumWeight: " << sumWeight << "\t Capacity: " << capacity << "\n";
+
 	cout << "Knapsack's worth: " << f[capacity] << endl;
 
 	//cout << "Chosen items are:" << endl;
@@ -273,5 +324,33 @@ void printResults(int capacity, int sumWeight, int numelem, int* f, int* M,
 	cout << "*************************************************" << endl;
 	cout << endl;
 
+}
+
+void chronoVSomptime() {
+	Chrono chrono;
+	double timeomp, tomp1, tomp2;
+	time_t t1, t2;
+
+	chrono.startChrono();
+	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+	chrono.stopChrono();
+	cout << "chrono MS: " << chrono.getTimeChrono() << endl;
+
+	chrono.startChrono();
+	std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+	chrono.stopChrono();
+	cout << "chrono MS: " << chrono.getTimeChrono() << endl;
+
+	tomp1 = omp_get_wtime();
+	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+	tomp2 = omp_get_wtime();
+	timeomp = tomp2 - tomp1;
+	cout << "tomp in Sec: " << timeomp << endl;
+
+	time(&t1);
+	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+	time(&t2);
+	cout << "Time in Sec " << difftime(t2, t1) << endl;
+	exit(0);
 }
 
