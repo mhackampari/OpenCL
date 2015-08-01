@@ -20,8 +20,4 @@ clean:
 	rm *.o
 	rm $(NAME)
 
-#g++ -Wall -c -fopenmp hello_openmp.cpp 
-#g++ hello_openmp.o -o hello
-
-#Generate optimized code on Linux machine
 
