@@ -217,6 +217,7 @@ int main(int argc, char** argv) {
 			if (PRINT)
 				printResults(capacity, sumWeight, numelem[i], f, M, weight,
 						value, chrono.getTimeChrono());
+
 			free(M);
 			free(f);
 			free(value);

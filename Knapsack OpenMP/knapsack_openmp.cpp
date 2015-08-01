@@ -253,6 +253,7 @@ int main(int argc, char** argv) {
 				}
 
 			}
+
 			free(M);
 			free(f0);
 			free(f1);
