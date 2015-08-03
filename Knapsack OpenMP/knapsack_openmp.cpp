@@ -157,7 +157,7 @@ void chronoVSomptime();
 int main(int argc, char** argv) {
 
 	fstream output_file;
-	output_file.open("results_knapsack_omp3", ios_base::out);
+	output_file.open("results_knapsack_omp", ios_base::out);
 	Chrono chrono, echrono; //use chronoVSomptime() to see difference
 	double timeomp, tomp1, tomp2, total_time, etimeomp;
 	long timet = 0;
@@ -170,19 +170,24 @@ int main(int argc, char** argv) {
 
 	cout << "NUM MAX THREADS: " << omp_get_max_threads() << endl;
 	omp_set_num_threads(omp_get_max_threads());
-	echrono.startChrono();
-	time(&et0);
-	etimeomp = omp_get_wtime();
+
 	for (unsigned int i = 0; i < nelements; i++) {
 		timet = 0;
 		timeomp = 0;
 		total_time = 0;
 		cout << "ROUND: " << i << endl;
 		output_file << "ROUND: " << i << endl;
+		echrono.startChrono();
+		time(&et0);
+		etimeomp = omp_get_wtime();
 		for (unsigned int j = 0; j < ncycles; j++) {
 
 			TestData *t = new TestData(numelem[i]);
 			int sumWeight = t->getSum();
+			if (j == 0) {
+				cout << "sumweight: " << sumWeight << endl;
+				output_file << "sumweight: " << sumWeight << endl;
+			}
 			int sumK = sumWeight;
 			int capacity = t->getCapacity();
 			int *value = (int *) calloc(numelem[i], sizeof(int));
@@ -195,8 +200,7 @@ int main(int argc, char** argv) {
 			//segmentation fault can be caused because of max memory limit(ram)
 			int *M = (int *) calloc(numelem[i] * (capacity + 1), sizeof(int)); //M[numelem][capacity]
 			if (M == NULL)
-				cout
-						<< "NOT ENOUGH AVAILABLE SPACE!!!! TRY WITH LESS ELEMENTS\n";
+				cout<< "NOT ENOUGH AVAILABLE SPACE!!!! TRY WITH LESS ELEMENTS\n";
 
 			chrono.startChrono();
 			tomp1 = omp_get_wtime();
@@ -236,13 +240,6 @@ int main(int argc, char** argv) {
 
 				}
 
-				chrono.stopChrono();
-				tomp2 = omp_get_wtime();
-				time(&t1);
-				total_time += difftime(t1, t0);
-				timeomp += tomp2 - tomp1;
-				timet += chrono.getTimeChrono();
-
 				if (print) {
 					if (numelem[i] % 2 == 0)
 						printResults(capacity, sumWeight, numelem[i], f0, M,
@@ -254,11 +251,19 @@ int main(int argc, char** argv) {
 
 			}
 
+			chrono.stopChrono();
+			tomp2 = omp_get_wtime();
+			time(&t1);
+			total_time += difftime(t1, t0);
+			timeomp += tomp2 - tomp1;
+			timet += chrono.getTimeChrono();
+
 			free(M);
 			free(f0);
 			free(f1);
 			free(value);
 			free(weight);
+
 		}
 
 		timet = timet / (double) ncycles;

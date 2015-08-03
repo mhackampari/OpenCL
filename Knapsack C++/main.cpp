@@ -156,6 +156,7 @@ void printResults(int capacity, int sumWeight, int numelem, int* f, int* M,
 
 int main(int argc, char** argv) {
 
+
 	fstream out_file("knapsack_results", ios::out);
 	int numelem[] = { 5, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000 };
 	unsigned int nelements = sizeof(numelem) / sizeof(int);
@@ -175,6 +176,11 @@ int main(int argc, char** argv) {
 		for (unsigned int j = 0; j < ncycles; j++) {
 			TestData *t = new TestData(numelem[i]);
 			int sumWeight = t->getSum();
+			if(j==0) {
+				cout << "sumweight: " << sumWeight << endl;
+				out_file << "sumweight: " << sumWeight << endl;
+			}
+
 			int sumK = sumWeight;
 			int capacity = t->getCapacity();
 			int *value = (int *) calloc(numelem[i], sizeof(int));
@@ -217,7 +223,6 @@ int main(int argc, char** argv) {
 			if (PRINT)
 				printResults(capacity, sumWeight, numelem[i], f, M, weight,
 						value, chrono.getTimeChrono());
-
 			free(M);
 			free(f);
 			free(value);
