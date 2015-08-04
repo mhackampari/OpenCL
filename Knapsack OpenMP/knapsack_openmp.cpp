@@ -101,9 +101,11 @@ class Chrono {
 private:
 	bool resetted;
 	bool running;
-	chrono::high_resolution_clock::time_point beg;
-	chrono::high_resolution_clock::time_point end;
-	chrono::duration<int, std::milli> elapsed_time;
+	chrono::high_resolution_clock::time_point start_chrono;
+	chrono::high_resolution_clock::time_point end_chrono;
+	chrono::duration<int, std::milli> elapsed_chrono_time;
+	double start_omp, end_omp, elapsed_omp_time;
+	long start_time, end_time, elapsed_time;
 
 public:
 
@@ -117,12 +119,17 @@ public:
 
 	void startChrono() {
 		running = true;
-		beg = std::chrono::high_resolution_clock::now();
+		start_chrono = std::chrono::high_resolution_clock::now();
+		start_omp = omp_get_wtime();
+		time(&start_time);
+
 	}
 
 	void stopChrono() {
 		if (running) {
-			end = std::chrono::high_resolution_clock::now();
+			end_chrono = std::chrono::high_resolution_clock::now();
+			end_omp = omp_get_wtime();
+			time(&end_time);
 			running = false;
 		}
 	}
@@ -137,17 +144,49 @@ public:
 		return running;
 	}
 
-	unsigned long getTimeChrono() {
+	unsigned long getElapsedChrono() {
 		if (running) {
-			elapsed_time = std::chrono::duration_cast
-					< std::chrono::milliseconds > (end - beg);
-			return elapsed_time.count();
-		} else {
-			elapsed_time = std::chrono::duration_cast
-					< std::chrono::milliseconds > (end - beg);
-			return elapsed_time.count();
+			stopChrono();
 		}
+		elapsed_chrono_time = std::chrono::duration_cast
+				< std::chrono::milliseconds > (end_chrono - start_chrono);
+		return elapsed_chrono_time.count();
 	}
+	double getElapsedOmpTime() {
+		if (running) {
+			stopChrono();
+		}
+		elapsed_omp_time = end_omp - start_omp;
+		return elapsed_omp_time;
+
+	}
+	long getElapsedTime() {
+		if (running) {
+			stopChrono();
+		}
+		elapsed_time = end_time - start_time;
+		return elapsed_time;
+	}
+	void printElapsedTime() {
+		if(running){
+			stopChrono();
+		}
+
+		cout << "Chrono time[ms]: " << elapsed_chrono_time.count() << endl;
+		cout << "Omp time[s]: " << elapsed_time << endl;
+		cout << "<time.h> time[s]: " << elapsed_time << endl;
+	}
+
+	void printElapsedTimeToFile(fstream &file) {
+			if(running){
+				stopChrono();
+			}
+
+			file << "Chrono time[ms]: " << elapsed_chrono_time.count() << endl;
+			file << "Omp time[s]: " << elapsed_time << endl;
+			file << "<time.h> time[s]: " << elapsed_time << endl;
+		}
+
 };
 
 void printResults(int capacity, int sumWeight, int numelem, int* f, int* M,
@@ -155,13 +194,13 @@ void printResults(int capacity, int sumWeight, int numelem, int* f, int* M,
 void chronoVSomptime();
 
 int main(int argc, char** argv) {
-
+	Chrono chrono, echrono; //use chronoVSomptime() to see difference
+	echrono.startChrono();
 	fstream output_file;
 	output_file.open("results_knapsack_omp", ios_base::out);
-	Chrono chrono, echrono; //use chronoVSomptime() to see difference
-	double timeomp, tomp1, tomp2, total_time, etimeomp;
-	long timet = 0;
-	time_t t0, t1, et0, et1;
+	double timeomp;
+	long total_time= 0;
+	long total_chrono = 0;
 	bool print = false;
 
 	int numelem[] = { 5, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000 };
@@ -172,14 +211,12 @@ int main(int argc, char** argv) {
 	omp_set_num_threads(omp_get_max_threads());
 
 	for (unsigned int i = 0; i < nelements; i++) {
-		timet = 0;
-		timeomp = 0;
 		total_time = 0;
+		timeomp = 0;
+		total_chrono = 0;
 		cout << "ROUND: " << i << endl;
 		output_file << "ROUND: " << i << endl;
-		echrono.startChrono();
-		time(&et0);
-		etimeomp = omp_get_wtime();
+
 		for (unsigned int j = 0; j < ncycles; j++) {
 
 			TestData *t = new TestData(numelem[i]);
@@ -200,11 +237,10 @@ int main(int argc, char** argv) {
 			//segmentation fault can be caused because of max memory limit(ram)
 			int *M = (int *) calloc(numelem[i] * (capacity + 1), sizeof(int)); //M[numelem][capacity]
 			if (M == NULL)
-				cout<< "NOT ENOUGH AVAILABLE SPACE!!!! TRY WITH LESS ELEMENTS\n";
+				cout
+						<< "NOT ENOUGH AVAILABLE SPACE!!!! TRY WITH LESS ELEMENTS\n";
 
 			chrono.startChrono();
-			tomp1 = omp_get_wtime();
-			time(&t0);
 			for (int k = 0; k < numelem[i]; k++) {
 
 				sumK = sumK - weight[k];
@@ -243,20 +279,19 @@ int main(int argc, char** argv) {
 				if (print) {
 					if (numelem[i] % 2 == 0)
 						printResults(capacity, sumWeight, numelem[i], f0, M,
-								weight, value, chrono.getTimeChrono());
+								weight, value, chrono.getElapsedChrono());
 					else
 						printResults(capacity, sumWeight, numelem[i], f1, M,
-								weight, value, chrono.getTimeChrono());
+								weight, value, chrono.getElapsedChrono());
 				}
 
 			}
 
 			chrono.stopChrono();
-			tomp2 = omp_get_wtime();
-			time(&t1);
-			total_time += difftime(t1, t0);
-			timeomp += tomp2 - tomp1;
-			timet += chrono.getTimeChrono();
+
+			total_chrono += chrono.getElapsedChrono();
+			timeomp += chrono.getElapsedOmpTime();
+			total_time += chrono.getElapsedTime();
 
 			free(M);
 			free(f0);
@@ -266,25 +301,24 @@ int main(int argc, char** argv) {
 
 		}
 
-		timet = timet / (double) ncycles;
-		timeomp = timeomp / (double) ncycles;
 		total_time = total_time / (double) ncycles;
+		timeomp = timeomp / (double) ncycles;
+		total_chrono = total_chrono / (double) ncycles;
 
 		cout << "# of elements: " << numelem[i] << endl;
-		cout << "Average time[ms]: " << timet << endl;
-		cout << "Omp time: " << timeomp << endl;
+		cout << "Chrono time[ms]: " << total_chrono << endl;
+		cout << "Omp time[s]: " << timeomp << endl;
 		cout << "Total time: " << total_time << endl;
 
 		output_file << "# of elements: " << numelem[i] << endl;
-		output_file << "Average time: " << timet << endl;
-		output_file << "Omp time: " << timeomp << endl;
+		output_file << "Chrono time[ms]: " << total_chrono << endl;
+		output_file << "Omp time[s]: " << timeomp << endl;
 	}
 	echrono.stopChrono();
-	time(&et1);
-	etimeomp = omp_get_wtime() - etimeomp;
-	cout << "EX-chrono time[ms]: " << echrono.getTimeChrono() << endl;
-	cout << "Ex-Omp time: " << etimeomp << endl;
-	cout << "Ex-time : " << difftime(et1, et0) << endl;
+
+	cout << "EX-chrono time[ms]: " << echrono.getElapsedChrono()<< endl;
+	cout << "Ex-Omp time: " << echrono.getElapsedOmpTime() << endl;
+	cout << "Ex-time : " << echrono.getElapsedTime() << endl;
 	output_file.close();
 	return 0;
 }
@@ -340,12 +374,14 @@ void chronoVSomptime() {
 	chrono.startChrono();
 	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	chrono.stopChrono();
-	cout << "chrono MS: " << chrono.getTimeChrono() << endl;
+	cout << "chrono MS: " << chrono.getElapsedChrono()<< endl;
 
 	chrono.startChrono();
 	std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 	chrono.stopChrono();
-	cout << "chrono MS: " << chrono.getTimeChrono() << endl;
+	cout << "chrono MS: " << chrono.getElapsedChrono()<< endl;
+	cout << "tomp in Sec: " << chrono.getElapsedOmpTime() << endl;
+	cout << "Time in Sec " << chrono.getElapsedTime() << endl;
 
 	tomp1 = omp_get_wtime();
 	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
