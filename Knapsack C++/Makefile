@@ -1,55 +1,73 @@
-#	http://www.gnu.org/software/make/manual/make.html
-#	http://makefiletutorial.com/
-#
-#	target: dependecies
-#		command
 
-#	$@: the target filename.
-#	$*: the target filename without the file extension.
-#	$<: the first prerequisite filename.
-#	$^: the filenames of all the prerequisites, separated by spaces, discard duplicates.
-#	$+: similar to $^, but includes duplicates.
-#	$?: the names of all prerequisites that are newer than the target, separated by spaces.
-##################################################
+NAME = knapsack
+BUILDIR = build
+VPATH = src:build
+SRCS := $(basename $(shell find ./src -name "*.cpp")) # := VS =
+OBJS := $(SRCS:.cpp=.o)
 
-NAME = knapsack++ 
 CXX = g++ 
-CXXFLAGS = -Wall -std=c++11
 LDFLAGS = -fopenmp
-SRCS = main.cpp
-# $(shell find . -name "*.cpp") finds all cpp files in the current directory
-# $(notdir files ...) removes all "/" and path
-SRCS = $(notdir $(shell find . -name "*.cpp"))
-OBJS = $(SRCS:.cpp=.o)
-MKDIR = mkdir -p ./obj
-RMDIR = rm -rf ./obj
-RMFILES = rm -f $(NAME) $(OBJS) *.txt
 
+MKDIR = mkdir -p
+RM = rm -rf
+RMFILES = $(RM) $(wildcard $(NAME)*) 
+RMDIR = $(RM) $(BUILDIR)
 
-#	?= only sets variables if they have not yet been defined
-DEBUG ?= 1
-ifeq ($(DEBUG), 1)
-DEBUG_FLAGS += -g3 -O0 -DDEBUG
-CXXLAGS += $(DEBUG_FLAGS) 
-else
-RELEASE += -O3
-CXXFLAGS += $(RELEASE)
-endif
+##############################################
 
-####################################################
-all: mkdir $(NAME)
+DBGNAME = $(addsuffix _dbg, $(NAME))
+DBGDIR = $(addprefix $(BUILDIR)/, debug)
+DBGOBJ = $(addprefix $(DBGDIR)/, $(OBJS))
+DBGCXXFLAGS = -g3 -O0 -DDEBUG -std=c++11
 
-mkdir:
-	$(MKDIR)
-	echo $(SRCS)
+############################
 
-$(NAME): $(OBJS)
-	$(CXX) $(LDFLAGS) $^ -o $@ 
-%.o: %.cpp
-	$(CXX) -c $< $(CXXFLAGS) $(LDFLAGS)
+RLSNAME = $(addsuffix _rls, $(NAME))
+RLSDIR = $(addprefix $(BUILDIR)/, release)
+RLSOBJ = $(addprefix $(RLSDIR)/, $(OBJS))
+RLSCXXFLAGS = -O3 -std=c++11
 
+#**********************************************************
+.PHONY: all clean mkdir debug release help
+
+all: debug release
+	@echo "SETUP DIRECTORIES: OK"
+	$(shell find . -type d -print)
+	@echo "SOURCE FILES: " $(SRCS)
+	
+
+#**********************************************************
+debug: mkdbgdir $(DBGNAME)
+
+mkdbgdir:
+	$(MKDIR) $(DBGDIR)
+
+$(DBGNAME): $(DBGOBJ) #$(addprefix $(BUILDIR)/, $(OBJS))
+	$(CXX) $(LDFLAGS) $^ -o $@
+	
+$(DBGDIR)/%.o: %.cpp
+	$(CXX) -c $< $(DBGCXXFLAGS) $(LDFLAGS) -o $@
+
+#**********************************************************
+release: mkrlsdir $(RLSNAME)
+
+mkrlsdir:
+	$(MKDIR) $(RLSDIR)
+
+$(RLSNAME): $(RLSOBJ) #$(addprefix $(BUILDIR)/, $(OBJS))
+	$(CXX) $(LDFLAGS) $^ -o $@
+	
+$(RLSDIR)/%.o: %.cpp
+	$(CXX) -c $< $(RLSCXXFLAGS) $(LDFLAGS) -o $@
+	
+#**********************************************************
 clean: 
 	$(RMFILES)
 	$(RMDIR)
 
-
+help:
+	@echo "release - release version"
+	@echo "debug - debug version"
+	@echo "clean - removes build directory, binaries, and txt file"
+	
+	

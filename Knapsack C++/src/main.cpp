@@ -157,7 +157,7 @@ void printResults(int capacity, int sumWeight, int numelem, int* f, int* M,
 int main(int argc, char** argv) {
 
 
-	fstream out_file("knapsack_results", ios::out);
+	fstream out_file("knapsack_results.txt", ios::out);
 	int numelem[] = { 5, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000 };
 	unsigned int nelements = sizeof(numelem) / sizeof(int);
 	const unsigned int ncycles = 100;
