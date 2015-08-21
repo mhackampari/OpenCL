@@ -8,6 +8,7 @@ OBJS := $(SRCS:.cpp=.o)
 
 CXX = g++ 
 LDFLAGS = -fopenmp
+CXXFLAGS = -std=c++11 -Wall -I./include
 
 MKDIR = mkdir -p
 RM = rm -rf
@@ -19,14 +20,14 @@ RMDIR = $(RM) $(BUILDIR)
 DBGNAME = $(addsuffix _dbg, $(NAME))
 DBGDIR = $(addprefix $(BUILDIR)/, debug)
 DBGOBJ = $(addprefix $(DBGDIR)/, $(OBJS))
-DBGCXXFLAGS = -g3 -O0 -DDEBUG -std=c++11
+DBGCXXFLAGS = -g3 -O0 -DDEBUG $(CXXFLAGS)
 
 ############################
 
 RLSNAME = $(addsuffix _rls, $(NAME))
 RLSDIR = $(addprefix $(BUILDIR)/, release)
 RLSOBJ = $(addprefix $(RLSDIR)/, $(OBJS))
-RLSCXXFLAGS = -O3 -std=c++11
+RLSCXXFLAGS = -O3 $(CXXFLAGS)
 
 #**********************************************************
 .PHONY: all clean mkdir debug release help
