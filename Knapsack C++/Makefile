@@ -2,8 +2,9 @@
 NAME = knapsack
 BUILDIR = build
 VPATH = src:build
-SRCS := $(basename $(shell find ./src -name "*.cpp")) # := VS =
+SRCS := $(notdir $(shell find ./src -name "*.cpp")) # := VS =
 OBJS := $(SRCS:.cpp=.o)
+
 
 CXX = g++ 
 LDFLAGS = -fopenmp
@@ -47,6 +48,7 @@ $(DBGNAME): $(DBGOBJ) #$(addprefix $(BUILDIR)/, $(OBJS))
 	
 $(DBGDIR)/%.o: %.cpp
 	$(CXX) -c $< $(DBGCXXFLAGS) $(LDFLAGS) -o $@
+	
 
 #**********************************************************
 release: mkrlsdir $(RLSNAME)
