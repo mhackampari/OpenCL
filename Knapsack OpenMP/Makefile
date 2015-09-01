@@ -1,23 +1,76 @@
-#gcc -fopenmp filename.cpp
-#For bash shell: export OMP_NUM_THREADS=4
 
-# add option: -g after -Wall to have symbolic information for gdb
-# -lm to compile with math lib
-#g++ -Wall main.cpp -o knapsack
-NAME = knapsack_openmp 
+NAME = knapsack
+BUILDIR = build
+VPATH = src:build
+SRCS := $(notdir $(shell find ./src -name "*.cpp")) # := VS =
+OBJS := $(SRCS:.cpp=.o)
 
-CXX=g++ 
-CFLAGS = -Wall -O3 -std=c++11
+
+CXX = g++ 
 LDFLAGS = -fopenmp
-all: $(NAME)
+CXXFLAGS = -std=c++11 -Wall -I./include
 
-$(NAME): knapsack_openmp.o
-	$(CXX) $(LDFLAGS) $^ -o $@ 
-%.o: %.cpp
-	$(CXX) -c $< $(CFLAGS) -fopenmp
+MKDIR = mkdir -p
+RM = rm -rf
+RMFILES = $(RM) $(wildcard $(NAME)*) 
+RMDIR = $(RM) $(BUILDIR)
 
+##############################################
+
+DBGNAME = $(addsuffix _dbg, $(NAME))
+DBGDIR = $(addprefix $(BUILDIR)/, debug)
+DBGOBJ = $(addprefix $(DBGDIR)/, $(OBJS))
+DBGCXXFLAGS = -g3 -O0 -DDEBUG $(CXXFLAGS)
+
+############################
+
+RLSNAME = $(addsuffix _rls, $(NAME))
+RLSDIR = $(addprefix $(BUILDIR)/, release)
+RLSOBJ = $(addprefix $(RLSDIR)/, $(OBJS))
+RLSCXXFLAGS = -O3 $(CXXFLAGS)
+
+#**********************************************************
+.PHONY: all clean mkdir debug release help
+
+all: debug release
+	@echo "SETUP DIRECTORIES: OK"
+	$(shell find . -type d -print)
+	@echo "SOURCE FILES: " $(SRCS)
+	
+
+#**********************************************************
+debug: mkdbgdir $(DBGNAME)
+
+mkdbgdir:
+	$(MKDIR) $(DBGDIR)
+
+$(DBGNAME): $(DBGOBJ) #$(addprefix $(BUILDIR)/, $(OBJS))
+	$(CXX) $(LDFLAGS) $^ -o $@
+	
+$(DBGDIR)/%.o: %.cpp
+	$(CXX) -c $< $(DBGCXXFLAGS) $(LDFLAGS) -o $@
+	
+
+#**********************************************************
+release: mkrlsdir $(RLSNAME)
+
+mkrlsdir:
+	$(MKDIR) $(RLSDIR)
+
+$(RLSNAME): $(RLSOBJ) #$(addprefix $(BUILDIR)/, $(OBJS))
+	$(CXX) $(LDFLAGS) $^ -o $@
+	
+$(RLSDIR)/%.o: %.cpp
+	$(CXX) -c $< $(RLSCXXFLAGS) $(LDFLAGS) -o $@
+	
+#**********************************************************
 clean: 
-	rm *.o
-	rm $(NAME)
+	$(RMFILES)
+	$(RMDIR)
 
-
+help:
+	@echo "release - release version"
+	@echo "debug - debug version"
+	@echo "clean - removes build directory, binaries, and txt file"
+	
+	
