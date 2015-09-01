@@ -5,7 +5,7 @@
  * Created on July 22, 2015, 7:08 PM
  * https://computing.llnl.gov/tutorials/openMP/
  */
-
+/*
 #include <cstdlib>
 #include <vector>
 #include <iostream>
@@ -396,3 +396,4 @@ void chronoVSomptime() {
 	exit(0);
 }
 
+*/
