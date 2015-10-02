@@ -6,200 +6,227 @@
  * https://computing.llnl.gov/tutorials/openMP/
  */
 
-
 #include <cstdlib>
 #include <iostream>
 #include <memory.h>
 #include <fstream>
+#include <math.h>
 #include "Chrono.h"
 #include "TestData.h"
 
 using namespace std;
 #ifndef PRINT
-#define PRINT false
+#define PRINT true
 #endif
 
 #ifndef VERBOSE
-#define VERBOSE false
+#define VERBOSE true
 #endif
 
 #ifndef NCYCLES
-#define NCYCLES 100
+#define NCYCLES 1
 #endif
 
 using namespace std;
 
-void printResults(int capacity, int sumWeight, int numelem, int* f, int* M,
-	int* weight, int* value, long runtime)
+void printResults(unsigned int capacity, unsigned int sumWeight, unsigned int numelem, unsigned int* f, unsigned int* M,
+	unsigned int* weight, unsigned int* value, long runtime)
     {
 
     cout << "\nPRINTOUT OF THE RESULTS: " << endl;
     cout << "*************************************************" << endl;
 
-#if VERBOSE    
-    cout << "Matrix of decisions M[items][capacity]: " << endl;
-    for (int i = 0; i < numelem * (capacity+1); i++)
+    int rows = ceil(numelem / 32.0);
+    int cols = capacity + 1;
+/*
+#if VERBOSE
+    for (int i = 0; i < rows * cols; i++)
 	{
-	cout << *(M + i) << "; ";
-	if ((i + 1) % (capacity+1) == 0)
+
+	unsigned int x = ceil(log2(M[i])); //x is the position 0...31
+	cout << i << ": # of bits: " << x << "\t M[]: " << M[i] << "\n";
+	if ((i + 1) % cols == 0)
 	    {
-	    cout << endl;
+	    cout << "***" << endl;
 	    }
 	}
-#endif    
+#endif*/
 
-    cout << "SumWeight: " << sumWeight << "\t Capacity: " << capacity << "\n";
-    cout << "Knapsack's worth: " << f[capacity] << endl;
-
-#if VERBOSE
-    cout << "Chosen items are:" << endl;
-#endif
-
-    int cap = capacity;
+    int c = capacity;
+    int bit32 = 32;
+    int worth = 0;
     int capacita = 0;
-    for (int item = numelem - 1; item > -1; item--)
-	{
-	for (int c = cap - 1; c > -1; c--)
-	    {
-	    if (M[item * (capacity) + c] != 0)
-		{
-#if VERBOSE
-		cout << "Value " << item << ": " << value[item];
-#endif
-		capacita += weight[item];
-		cap = cap - weight[item];
-		break;
-		}
-	    else if (M[item * (capacity) + c] == 0)
-		{
-		c = 0;
-		}
-	    }
 
+    cout << "Chosen items are:" << endl;
+    for (int i = ceil(numelem / 32.0) - 1; i >= 0; i--)
+	{
+	bit32 = 32;
+	//cout << "**numelem / 32.0**" << endl;
+	while (bit32 > 0 && c > 0)
+	    {
+
+	    unsigned int m = M[i * (capacity+1) + c];
+	    unsigned int x = ceil(log2(M[i * (capacity+1) + c])); // gives the position of the msb: 000100 = 2
+
+	    unsigned int bit32pw = pow(2, (bit32 - 1));
+	    if (bit32pw == (bit32pw & m))
+		{ //binary: 1000 == 1000 <- (1000 & 1010)
+#if VERBOSE
+		cout << "M[" << i * (capacity+1) + c << "]: "
+			<< M[i * (capacity+1) + c] << endl;
+		cout << x << "; ";
+		cout << i * 32 + bit32 - 1 << " \tvalue: "
+			<< value[i * 32 + bit32 - 1] << "\tweight: "
+			<< weight[i * 32 + bit32 - 1] << endl;
+#endif
+		c -= weight[i * 32 + bit32 - 1];
+		capacita += weight[i * 32 + bit32 - 1];
+		worth += value[i * 32 + bit32 - 1];
+		}
+	    bit32--;
+
+	    }
 	}
 
-    cout << "Weight of the Knapsack: " << capacita << endl;
+    cout << "Knapsack f: " << f[capacity] << endl;
+    cout << "SumWeight: " << sumWeight << "\t Capacity: " << capacity << endl;
+    cout << "Knapsack's worth: " << worth
+	    << "\t Weight of the selected objects: " << capacita << endl;
     cout << " profiling time: " << runtime * 1L << "ms" << endl;
     cout << "*************************************************" << endl;
     cout << "END OF THE PRINTOUT" << endl;
 
     }
 
-void init(int &capacity, int &sumWeight, int numelem, int **f0, int **f1, int **M,
-	int **weight, int **value)
+void init(unsigned int &capacity, unsigned int &sumWeight, unsigned int numelem, unsigned int **f0, unsigned int **f1,
+	unsigned int **M, unsigned int **weight, unsigned int **value)
     {
 
     TestData t(numelem, VERBOSE);
     sumWeight = t.getSum();
     capacity = t.getCapacity();
-    *value = (int *) calloc(numelem, sizeof(int));
-    *weight = (int *) calloc(numelem, sizeof(int));
-    memcpy(*value, t.getValue(), sizeof(int) * numelem);
-    memcpy(*weight, t.getWeight(), sizeof(int) * numelem);
-    *f0 = (int *) calloc((capacity + 1), sizeof(int)); //f[0, ..., capacity]
-    *f1 = (int *) calloc((capacity + 1), sizeof(int)); 
+    *value = (unsigned int *) calloc(numelem, sizeof(unsigned int));
+    *weight = (unsigned int *) calloc(numelem, sizeof(unsigned int));
+    memcpy(*value, t.getValue(), sizeof(unsigned int) * numelem);
+    memcpy(*weight, t.getWeight(), sizeof(unsigned int) * numelem);
+    *f0 = (unsigned int *) calloc((capacity + 1), sizeof(unsigned int)); //f[0, ..., capacity]
+    *f1 = (unsigned int *) calloc((capacity + 1), sizeof(unsigned int));
     //segmentation fault can be caused because of max memory limit(ram)
-    *M = (int *) calloc(numelem * (capacity + 1), sizeof(int)); //M[numelem][capacity]
+    unsigned int rows = ceil(numelem / (sizeof(unsigned int) * 8.0));
+    *M = (unsigned int *) calloc(
+	    rows * (capacity + 1),
+	    sizeof(unsigned int)); //M[numelem][capacity]
     if (M == NULL)
 	cout << "NOT ENOUGH AVAILABLE SPACE!!!! TRY WITH LESS ELEMENTS\n";
 
-#if VERBOSE
-    int sum = 0;
-    cout << "Init:\n";
-    for (int i = 0; i < numelem; i++)
-	{
-	cout << i << "weight: " << *(*weight+i) << "\t" << "value: " << *(*value +i) << endl;
-	sum += *(*weight+i);
-	}
-    cout << "SUM WEIGHT AFTER INIT: " << sum << endl;
-#endif
 
     }
 
-int main(int argc, char** argv) {
-	fstream out_file("knapsack_results.txt", ios::out);
-    int numelem[] =
+int main(int argc, char** argv)
+    {
+    fstream out_file("knapsack_results.txt", ios::out);
+    unsigned int numelem[] =
 	{
-	5, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000
+	200, 200, 300, 400, 500, 600, 700, 800, 900, 1000
 	};
-    unsigned int nelements = sizeof(numelem) / sizeof(int);
+    unsigned int nelements = sizeof(numelem) / sizeof(unsigned int);
     Chrono chrono, echrono;
     double time_omp;
     unsigned long time_chrono;
 
     echrono.startChrono();
-    for (unsigned int i = 0; i < nelements; i++)
+    for (unsigned int i = 0; i < nelements-9; i++)
 	{
 	time_chrono = 0;
 	time_omp = 0;
 	for (unsigned int j = 0; j < NCYCLES; j++)
 	    {
 
-	    int sumWeight = 100;
-	    int capacity = sumWeight / 2;
-	    int *value, *weight, *f0, *f1, *M;
+	    unsigned int sumWeight = 100;
+	    unsigned int capacity = sumWeight / 2;
+	    unsigned int *value, *weight, *f0, *f1, *M;
 
-	    init(capacity, sumWeight, numelem[i], &f0, &f1, &M, &weight, &value);
+	    init(capacity, sumWeight, numelem[i], &f0, &f1, &M, &weight,
+		    &value);
 
-	    int sumK = sumWeight;
+	    unsigned int sumK = sumWeight;
+	    unsigned int row = 0;
+	    unsigned int power = 0;
 
 	    chrono.startChrono();
-#pragma omp parallel
-	    {
-			for (int k = 0; k < numelem[i]; k++) {
 
-				sumK = sumK - weight[k];
-				int cmax = 0;
-				cmax = max(capacity - sumK, weight[k]);
-				int c = capacity;
+	    for (unsigned int k = 0; k < numelem[i]; k++)
+		{
 
-				if (k % 2 == 0) {
+		sumK = sumK - weight[k];
+		unsigned int cmax = 0;
+		cmax = max((int)(capacity - sumK), (int)weight[k]);
+		unsigned int c = capacity;
+		power = k % 32;
+		if (k % 32 == 0){
+		    row += 1;
+		}
 
-#pragma omp for
-					for (c = capacity; c >= cmax; c--) {
-						
-						//FALSE SHARING
+		if (k % 2 == 0)
+		    {
 
-						if (f0[c] < f0[c - weight[k]] + value[k]) {
-							f1[c] = f0[c - weight[k]] + value[k];
-							M[capacity * k + c] = 1;
-						} else {
-							f1[c] = f0[c];
-						}
-					}
-				} 
+//#pragma omp parallel for
+		    for (c = capacity; c >= cmax; c--)
+			{
 
-				else {
+			//FALSE SHARING
 
-#pragma omp for
-					for (c = capacity; c >= cmax; c--) {
+			if (f0[c] < f0[c - weight[k]] + value[k])
+			    {
+			    f1[c] = f0[c - weight[k]] + value[k];
+			    M[(capacity+1) * (row-1) + c] += pow(2, power);
 
-						//FALSE SHARING
 
-						if (f1[c] < f1[c - weight[k]] + value[k]) {
-							f0[c] = f1[c - weight[k]] + value[k];
-							M[capacity * k + c] = 1;
-						} else {
-							f0[c] = f1[c];
-						}
-					}
+			    }
+			else
+			    {
+			    f1[c] = f0[c];
 
-				}
-
+			    }
 			}
-		}	
+		    }
 
-			chrono.stopChrono();
+		else
+		    {
+
+//#pragma omp parallel for
+		    for (c = capacity; c >= cmax; c--)
+			{
+
+			//FALSE SHARING
+
+			if (f1[c] < f1[c - weight[k]] + value[k])
+			    {
+			    f0[c] = f1[c - weight[k]] + value[k];
+			    M[(capacity+1) * (row-1) + c] += pow(2, power);
+
+			    }
+			else
+			    {
+			    f0[c] = f1[c];
+			    }
+			}
+
+		    }
+
+		}
+
+	    chrono.stopChrono();
 	    time_chrono += chrono.getElapsedChrono();
 	    time_omp += chrono.getElapsedOmpTime();
 
 #if PRINT
 	    if (numelem[i] % 2 == 0)
-						printResults(capacity, sumWeight, numelem[i], f0, M,
-								weight, value, chrono.getElapsedChrono());
-					else
-						printResults(capacity, sumWeight, numelem[i], f1, M,
-								weight, value, chrono.getElapsedChrono());
+	    printResults(capacity, sumWeight, numelem[i], f0, M,
+		    weight, value, chrono.getElapsedChrono());
+	    else
+	    printResults(capacity, sumWeight, numelem[i], f1, M,
+		    weight, value, chrono.getElapsedChrono());
 #endif
 	    free(M);
 	    free(f0);
@@ -219,6 +246,7 @@ int main(int argc, char** argv) {
 	out_file << "# of elements: " << numelem[i] << endl;
 	out_file << "Average time[ms]: " << time_chrono << endl;
 	out_file << "Omp time[s]: " << time_omp << endl;
+	cout << "#######################################################\n";
 
 	}
     echrono.stopChrono();
@@ -234,7 +262,4 @@ int main(int argc, char** argv) {
     out_file.close();
     return 0;
     }
-
-
-
 

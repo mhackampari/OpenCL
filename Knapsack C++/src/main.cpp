@@ -15,7 +15,7 @@
 
 using namespace std;
 #ifndef PRINT
-#define PRINT false
+#define PRINT true
 #endif
 
 #ifndef VERBOSE
@@ -23,7 +23,7 @@ using namespace std;
 #endif
 
 #ifndef NCYCLES
-#define NCYCLES 100
+#define NCYCLES 1
 #endif
 
 
@@ -33,7 +33,7 @@ void printResults(int capacity, int sumWeight, int numelem, int* f, int* M,
 
     cout << "\nPRINTOUT OF THE RESULTS: " << endl;
     cout << "*************************************************" << endl;
-
+/*
 #if VERBOSE    
     cout << "Matrix of decisions M[items][capacity]: " << endl;
     for (int i = 0; i < numelem * (capacity+1); i++)
@@ -44,7 +44,7 @@ void printResults(int capacity, int sumWeight, int numelem, int* f, int* M,
 	    cout << endl;
 	    }
 	}
-#endif    
+#endif    */
 
     cout << "SumWeight: " << sumWeight << "\t Capacity: " << capacity << "\n";
     cout << "Knapsack's worth: " << f[capacity] << endl;
@@ -55,20 +55,20 @@ void printResults(int capacity, int sumWeight, int numelem, int* f, int* M,
 
     int cap = capacity;
     int capacita = 0;
-    for (int item = numelem - 1; item > -1; item--)
+    for (int item = numelem - 1; item >= 0; item--)
 	{
-	for (int c = cap - 1; c > -1; c--)
+	for (int c = cap; c >=0; c--)
 	    {
-	    if (M[item * (capacity) + c] != 0)
+	    if (M[item * (capacity+1) + c] != 0)
 		{
 #if VERBOSE
-		cout << "Value " << item << ": " << value[item];
+		cout << "Value " << item << ": " << value[item] << " weight: " << weight[item] <<endl;
 #endif
 		capacita += weight[item];
 		cap = cap - weight[item];
 		break;
 		}
-	    else if (M[item * (capacity) + c] == 0)
+	    else if (M[item * (capacity+1) + c] == 0)
 		{
 		c = 0;
 		}
@@ -116,7 +116,7 @@ int main(int argc, char** argv)
     fstream out_file("knapsack_results.txt", ios::out);
     int numelem[] =
 	{
-	5, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000
+	200, 200, 300, 400, 500, 600, 700, 800, 900, 1000
 	};
     unsigned int nelements = sizeof(numelem) / sizeof(int);
     Chrono chrono, echrono;
@@ -124,7 +124,7 @@ int main(int argc, char** argv)
     unsigned long time_chrono;
 
     echrono.startChrono();
-    for (unsigned int i = 0; i < nelements; i++)
+    for (unsigned int i = 0; i < nelements-9; i++)
 	{
 	time_chrono = 0;
 	time_omp = 0;
@@ -153,10 +153,12 @@ int main(int argc, char** argv)
 		    if (f[c] < f[c - weight[k]] + value[k])
 			{
 			f[c] = f[c - weight[k]] + value[k];
-			M[capacity * k + c] = 1;
+			M[(capacity+1) * k + c] = 1;
 			}
 		    }
 		}
+
+
 
 	    chrono.stopChrono();
 	    time_chrono += chrono.getElapsedChrono();
