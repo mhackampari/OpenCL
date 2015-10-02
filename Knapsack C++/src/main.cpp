@@ -26,8 +26,62 @@ using namespace std;
 #define NCYCLES 100
 #endif
 
+
 void printResults(int capacity, int sumWeight, int numelem, int* f, int* M,
-	int* weight, int* value, long runtime);
+	int* weight, int* value, long runtime)
+    {
+
+    cout << "\nPRINTOUT OF THE RESULTS: " << endl;
+    cout << "*************************************************" << endl;
+
+#if VERBOSE    
+    cout << "Matrix of decisions M[items][capacity]: " << endl;
+    for (int i = 0; i < numelem * (capacity+1); i++)
+	{
+	cout << *(M + i) << "; ";
+	if ((i + 1) % (capacity+1) == 0)
+	    {
+	    cout << endl;
+	    }
+	}
+#endif    
+
+    cout << "SumWeight: " << sumWeight << "\t Capacity: " << capacity << "\n";
+    cout << "Knapsack's worth: " << f[capacity] << endl;
+
+#if VERBOSE
+    cout << "Chosen items are:" << endl;
+#endif
+
+    int cap = capacity;
+    int capacita = 0;
+    for (int item = numelem - 1; item > -1; item--)
+	{
+	for (int c = cap - 1; c > -1; c--)
+	    {
+	    if (M[item * (capacity) + c] != 0)
+		{
+#if VERBOSE
+		cout << "Value " << item << ": " << value[item];
+#endif
+		capacita += weight[item];
+		cap = cap - weight[item];
+		break;
+		}
+	    else if (M[item * (capacity) + c] == 0)
+		{
+		c = 0;
+		}
+	    }
+
+	}
+
+    cout << "Weight of the Knapsack: " << capacita << endl;
+    cout << " profiling time: " << runtime * 1L << "ms" << endl;
+    cout << "*************************************************" << endl;
+    cout << "END OF THE PRINTOUT" << endl;
+
+    }
 
 void init(int &capacity, int &sumWeight, int numelem, int **f, int **M,
 	int **weight, int **value)
@@ -145,59 +199,4 @@ int main(int argc, char** argv)
     return 0;
     }
 
-void printResults(int capacity, int sumWeight, int numelem, int* f, int* M,
-	int* weight, int* value, long runtime)
-    {
-
-    cout << "\nPRINTOUT OF THE RESULTS: " << endl;
-    cout << "*************************************************" << endl;
-
-#if VERBOSE    
-    cout << "Matrix of decisions M[items][capacity]: " << endl;
-    for (int i = 0; i < numelem * (capacity+1); i++)
-	{
-	cout << *(M + i) << "; ";
-	if ((i + 1) % (capacity+1) == 0)
-	    {
-	    cout << endl;
-	    }
-	}
-#endif    
-
-    cout << "SumWeight: " << sumWeight << "\t Capacity: " << capacity << "\n";
-    cout << "Knapsack's worth: " << f[capacity] << endl;
-
-#if VERBOSE
-    cout << "Chosen items are:" << endl;
-#endif
-
-    int cap = capacity;
-    int capacita = 0;
-    for (int item = numelem - 1; item > -1; item--)
-	{
-	for (int c = cap - 1; c > -1; c--)
-	    {
-	    if (M[item * (capacity) + c] != 0)
-		{
-#if VERBOSE
-		cout << "Value " << item << ": " << value[item];
-#endif
-		capacita += weight[item];
-		cap = cap - weight[item];
-		break;
-		}
-	    else if (M[item * (capacity) + c] == 0)
-		{
-		c = 0;
-		}
-	    }
-
-	}
-
-    cout << "Weight of the Knapsack: " << capacita << endl;
-    cout << " profiling time: " << runtime * 1L << "ms" << endl;
-    cout << "*************************************************" << endl;
-    cout << "END OF THE PRINTOUT" << endl;
-
-    }
 
