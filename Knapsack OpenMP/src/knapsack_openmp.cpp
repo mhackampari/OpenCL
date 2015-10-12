@@ -20,11 +20,11 @@ using namespace std;
 #endif
 
 #ifndef VERBOSE
-#define VERBOSE true
+#define VERBOSE false
 #endif
 
 #ifndef NCYCLES
-#define NCYCLES 1
+#define NCYCLES 100
 #endif
 
 using namespace std;
@@ -38,7 +38,7 @@ void printResults(unsigned int capacity, unsigned int sumWeight, unsigned int nu
 
     int rows = ceil(numelem / 32.0);
     int cols = capacity + 1;
-/*
+
 #if VERBOSE
     for (int i = 0; i < rows * cols; i++)
 	{
@@ -50,7 +50,7 @@ void printResults(unsigned int capacity, unsigned int sumWeight, unsigned int nu
 	    cout << "***" << endl;
 	    }
 	}
-#endif*/
+#endif
 
     int c = capacity;
     int bit32 = 32;
@@ -127,7 +127,7 @@ int main(int argc, char** argv)
     fstream out_file("knapsack_results.txt", ios::out);
     unsigned int numelem[] =
 	{
-	200, 200, 300, 400, 500, 600, 700, 800, 900, 1000
+	100, 200, 300, 400, 500, 600, 700, 800, 900, 1000
 	};
     unsigned int nelements = sizeof(numelem) / sizeof(unsigned int);
     Chrono chrono, echrono;
@@ -135,7 +135,7 @@ int main(int argc, char** argv)
     unsigned long time_chrono;
 
     echrono.startChrono();
-    for (unsigned int i = 0; i < nelements-9; i++)
+    for (unsigned int i = 0; i < nelements; i++)
 	{
 	time_chrono = 0;
 	time_omp = 0;

@@ -529,7 +529,7 @@ void Knapsack::createProgramBuild(int i, fstream *logfile) {
     string sourceKernel, line;
 
 
-    ofs.open("..//OpenCL//Knapsack OpenCL//knapsack_toth.cl", ios_base::in); //..//OpenCL//Knapsack OpenCL//knapsack_toth.cl
+    ofs.open("knapsack_toth.cl", ios_base::in); //..//OpenCL//Knapsack OpenCL//knapsack_toth.cl
     if (ofs.is_open()) {
         while (ofs.good()) {
             getline(ofs, line);
@@ -993,13 +993,14 @@ void Knapsack::printResults(fstream *logfile) {
         cout << endl;
      * */
      cout << "Matrix of decisions M[items][capacity]: " << endl;
+     cout << "num items: " << numelem << endl;
      *logfile << endl;
      *logfile << "Matrix of decisions M[items][capacity]: " << endl;
         for (int i = 0; i < numelem * capacity; i++) {
-            cout << *(M + i) << "; ";
-     *logfile << *(M + i) << "; ";
+            //cout << *(M + i) << "; ";
+     //*logfile << *(M + i) << "; ";
             if ((i + 1) % (capacity) == 0) {
-                cout << endl;
+                //cout << endl;
         // *logfile << endl;
             }
         }
