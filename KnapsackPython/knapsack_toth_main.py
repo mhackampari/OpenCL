@@ -68,7 +68,7 @@ mv = 0
 #Backtracking of the results
 c = capacity()-1
 for y in range(len(items)-1, -1, -1):
-    for x in range(c, 0, -1):
+    for x in range(c, -1, -1):
         if(M[y][x]!=0):
             print("selected items: ", items[y])
             c = c - items[y][1]
