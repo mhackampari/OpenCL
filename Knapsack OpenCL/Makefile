@@ -6,7 +6,7 @@ LDFLAGS = -L/opt/AMDAPPSDK-2.9-1/lib/x86_64/ -lOpenCL
 
 all: $(NAME)
 
-$(NAME): Chrono.o knapsack_main.o knapsack_class.o TestData.o Timer.o
+$(NAME): knapsack_main.o
 	$(CXX) $^ -o $@ $(CXXFLAGS) $(LDFLAGS)
 
 %.o : %.cpp
