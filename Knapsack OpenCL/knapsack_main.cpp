@@ -17,7 +17,6 @@
 #include <algorithm>
 
 #define NUMELEM 240
-#define CAPACITY 100
 using namespace std;
 
 class Knapsack {
@@ -80,21 +79,22 @@ public:
         uniform_int_distribution<int> unifdist(1, numelem);
 
         for (int i = 0; i < numelem; i++) {
-            weight[i] = unifdist(random_engine);
+            weight[i] = rand()%numelem+1;//unifdist(random_engine);
             sum += weight[i];
             value[i] = weight[i] + 50;
         }
 
-        //capacity = sum / 50;
-        capacity = CAPACITY;
+        capacity = sum / 50;
+        //capacity = CAPACITY;
+        cout << "Capacity: " << capacity << endl;
 
         vector<int>::iterator it_weight, it_value;
         it_weight = weight.begin();
         it_value = value.begin();
         for (int i = 0; i < numelem; i++) {
-            cout << i << " value:" << *(it_value + i) << "\t" << "weight: " << *(it_weight + i) << endl;
+            cout << i << "weight: " <<  *(it_weight + i) << "\t" << "value: " << *(it_value + i)<< endl;
         }
-        cout << "sum " << sum << "\t" << "capacity: " << capacity << endl;
+
     }
 
     void initDevices() {
@@ -254,7 +254,7 @@ public:
         cout << "\nPRINTOUT OF THE RESULTS: " << endl;
         cout << "*************************************************" << endl << endl;
         cout << "Matrix of decisions M[items][capacity]: " << endl;
-
+/*
         for (int i = 0; i < ceil(numelem / 32.0) * capacity; i++) {
 
             unsigned int x = ceil(log2(M[i])); //x is the position 0...31
@@ -263,7 +263,7 @@ public:
                 cout << "***" << endl;
             }
         }
-
+*/
         int c = capacity;
         unsigned int bit = pow(2, 31);
         int bit32 = 32;
@@ -508,7 +508,7 @@ public:
                 system("pause");
             }
 
-            cout << "m_d" << i << " " << m_d[i] << "\tM" << i + (j - 1) * capacity << ": " << M[i + (j - 1) * capacity] << endl;
+            //cout << "m_d" << i << " " << m_d[i] << "\tM" << i + (j - 1) * capacity << ": " << M[i + (j - 1) * capacity] << endl;
         }
 
         // http://stackoverflow.com/questions/8848575/fastest-way-to-reset-every-value-of-stdvectorint-to-0
