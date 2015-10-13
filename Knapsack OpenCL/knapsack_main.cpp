@@ -81,7 +81,7 @@ public:
         for (int i = 0; i < numelem; i++) {
             weight[i] = rand()%numelem+1;//unifdist(random_engine);
             sum += weight[i];
-            value[i] = weight[i] + 50;
+            value[i] = weight[i] + rand()%numelem + 1 ;
         }
 
         capacity = sum / 50;
