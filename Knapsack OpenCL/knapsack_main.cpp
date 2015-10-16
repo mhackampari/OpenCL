@@ -577,12 +577,11 @@ int main(int argc, char** argv) {
             ksack.writeToM(k_M);
         }
 
-
-        ksack.printResults();
-        system("pause");
     }//for device
 
     ksack.cleanUp();
+    ksack.printResults();
+
     return 0;
 }
 
