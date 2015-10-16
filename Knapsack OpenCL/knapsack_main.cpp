@@ -84,7 +84,7 @@ public:
             value[i] = weight[i] + rand()%numelem + 1 ;
         }
 
-        capacity = sum / 50;
+        capacity = sum / 2;
         //capacity = CAPACITY;
         cout << "Capacity: " << capacity << endl;
 
