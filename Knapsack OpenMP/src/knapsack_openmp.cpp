@@ -20,7 +20,7 @@ using namespace std;
 #endif
 
 #ifndef VERBOSE
-#define VERBOSE true
+#define VERBOSE false
 #endif
 
 #ifndef SUPERVERBOSE
@@ -131,7 +131,7 @@ int main(int argc, char** argv)
     fstream out_file("knapsack_results.txt", ios::out);
     unsigned int numelem[] =
 	{
-	700, 200, 300, 400, 500, 600, 700, 800, 900, 1000
+	1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000
 	};
     unsigned int nelements = sizeof(numelem) / sizeof(unsigned int);
     Chrono chrono, echrono;
@@ -139,7 +139,7 @@ int main(int argc, char** argv)
     unsigned long time_chrono;
 
     echrono.startChrono();
-    for (unsigned int i = 0; i < nelements-9; i++)
+    for (unsigned int i = 0; i < nelements; i++)
 	{
 	time_chrono = 0;
 	time_omp = 0;
@@ -147,7 +147,7 @@ int main(int argc, char** argv)
 	    {
 
 	    unsigned int sumWeight = 100;
-	    unsigned int capacity = sumWeight / 2;
+	    unsigned int capacity = sumWeight / 50;
 	    unsigned int *value, *weight, *f0, *f1, *M;
 
 	    init(capacity, sumWeight, numelem[i], &f0, &f1, &M, &weight,
@@ -174,7 +174,7 @@ int main(int argc, char** argv)
 		if (k % 2 == 0)
 		    {
 
-//#pragma omp parallel for
+#pragma omp parallel for
 		    for (c = capacity; c >= cmax; c--)
 			{
 
@@ -198,7 +198,7 @@ int main(int argc, char** argv)
 		else
 		    {
 
-//#pragma omp parallel for
+#pragma omp parallel for
 		    for (c = capacity; c >= cmax; c--)
 			{
 
