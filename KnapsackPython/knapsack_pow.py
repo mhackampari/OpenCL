@@ -1,6 +1,6 @@
 import math
 
-f = open('datafile', 'r')
+f = open('datafile64', 'r')
 
 tmpArray = f.next()
 #take first line and extract second element of the array
@@ -55,15 +55,22 @@ for y in range(len(items)):
     else: cmax = items[y][1]
     
     i = y % 32
-
+    if capacity() - cmax > 0:
+        print("Main arguments k = %d power = %d value: %d weight: %d"%(y,i,items[y][0],items[y][1])) 
+        print("total_threads: %d" %(capacity()-cmax+1))
     for c in range(capacity(), cmax-1, -1):
         if f[c]<f[c-items[y][1]]+items[y][0]:
             f[c] = f[c-items[y][1]]+items[y][0]
             M[k][c-1] += pow(2,i)
-       
-    if y >= 31 and y % 32 == 31:
-        k += 1
     
+    if y >= 31 and y % 32 == 31:
+        print M[k]
+        print f
+        k += 1
+
+
+print M
+print f
 output_file = open("knapsack_pow.txt", "w")
 
 #for x in range(len(items)):
@@ -83,13 +90,13 @@ for i in range(numobj-1, -1, -1):
     while bit32 > 0 and c > 0:
 
         m = M[i][c-1]
-        #print("M[%d][%d]: %d\n"%(i,c-1, M[i][c-1]))
-        x = math.ceil(math.log(m,2))
+        print("M[%d][%d]: %d\n"%(i,c-1, M[i][c-1]))
+        #x = math.ceil(math.log(m,2))
 
         bit32pw = pow(2,(bit32-1))
         if bit32pw == (bit32pw & m):
 
-            #print("M[%d][%d]: %d\n"%(i,c-1, M[i][c-1]))
+            print("M[%d][%d]: %d\n"%(i,c-1, M[i][c-1]))
             print("[%d] value: %d \tweight: %d"%(i*32+bit32-1,items[i*32+bit32-1][0],items[i*32+bit32-1][1]))
             output_file.write("[%d] value: %d \tweight: %d\n"%(i*32+bit32-1, items[i*32+bit32-1][0],items[i*32+bit32-1][1]))
 
