@@ -93,13 +93,15 @@ for k in range(0, values.size, 1):
     if k >= 31 and k % 32 == 31:
         row += 1
 
+total_elements = CAPACITY - cmax + 1
+print("KERNEL_NUM_ARGS", kernel.get_info(cl.kernel_info.NUM_ARGS))
+kernel.set_args(f0_mem,f1_mem, m_d_mem, numpy.uint32(cmax), weight_k, value_k, numpy.uint32(total_elements), numpy.uint32(power))
 
-"""
-kernel.set_arg(0, )
-#kernel.set_arg()
-#cl.enqueue_nd_range_kernel()
+cl.enqueue_nd_range_kernel(queue, kernel, (CAPACITY,),(preferred_multiple,))
 cl.enqueue_read_buffer(queue, m_d_mem, m_d).wait()
-"""
+
+print(m_d)
+
 
 
 myprint.printresults(M)

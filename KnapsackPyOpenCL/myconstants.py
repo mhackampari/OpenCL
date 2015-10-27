@@ -16,7 +16,7 @@ weights = numpy.random.random_integers(1,5,size=NUMELEM).astype(numpy.uint32)
 sumW = weights.sum()
 
 srcKernel = '''
-void kernel knapsack(global uint *input_f, global uint *output_f, global uint *m_d, int cmax, uint weightk, uint pk, uint maxelem, uint i){
+void kernel knapsack(global uint *input_f, global uint *output_f, global uint *m_d, uint cmax, uint weightk, uint pk, uint maxelem, uint i){
                 int c = get_global_id(0)+cmax;
                 if(get_global_id(0)<maxelem){
                     if(input_f[c] < input_f[c - weightk] + pk){
