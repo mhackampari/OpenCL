@@ -1,14 +1,10 @@
-__author__ = 'terminator'
+ya__author__ = 'terminator'
+
 
 import pyopencl as cl
 import numpy
 from myconstants import *
 import printresult as myprint
-
-
-print("values: ", values)
-print("weights: ", weights)
-print("sumW: ", sumW)
 
 platforms = cl.get_platforms()
 
@@ -30,7 +26,7 @@ context = cl.Context(devices)
 program = cl.Program(context, srcKernel)
 
 try:
-    program.build()
+    program.build(["-cl-no-signed-zeros"])
 except:
     print("Build log:")
     print(program.get_build_info(devices[0],cl.program_build_info.LOG))
@@ -56,10 +52,8 @@ print("preferred_multiple_size: ", preferred_multiple)
 
 if WG % preferred_multiple:
     print("Number of workers not a preferred multiple (%d*N)." \
-                    % (preferred_multiple))
+          % (preferred_multiple))
     print("Performance may be reduced.")
-
-#print (kernel.get_info())
 
 cl.enqueue_copy(queue, f0_mem, f0, is_blocking=True)
 cl.enqueue_copy(queue, f1_mem, f1, is_blocking=True)
@@ -67,41 +61,47 @@ cl.enqueue_copy(queue, m_d_mem, m_d, is_blocking=True)
 
 row = 0
 k = 0
+i = 0
 f = numpy.zeros_like(f0)
-M = numpy.zeros_like(m_d)
+M = numpy.array([]).astype(numpy.uint32)
 
 for k in range(0, values.size, 1):
 
     weight_k = weights.take(k)
     value_k = values.take(k)
-    print(sumW,weight_k,k)
+
     sumW = sumW - weight_k
-    print(sumW,weight_k,k)
     if CAPACITY - sumW > weight_k:
         cmax = CAPACITY - sumW
     else: cmax = weight_k
+    total_elements = CAPACITY - cmax + 1
+    if total_elements > 0:
 
-    power = k % 32
+        power = k % 32
 
-    for c in range(CAPACITY, int(cmax-1), -1):
-        print("C: ",c)
-        if f[c]<f[c - weight_k] + value_k:
-            f[c] = f[c - weight_k] + value_k
-            M[row * CAPACITY + c] += pow(2 ,power)
-            print("M", M[c])
+        if i%2 == 0:
+            kernel.set_args(f0_mem,f1_mem, m_d_mem, numpy.uint32(cmax), weight_k, value_k, numpy.uint32(total_elements), numpy.uint32(power))
+            cl.enqueue_nd_range_kernel(queue, kernel, (CAPACITY,),(preferred_multiple,))
+        else:
+            kernel.set_args(f1_mem, f0_mem, m_d_mem, numpy.uint32(cmax), weight_k, value_k, numpy.uint32(total_elements), numpy.uint32(power))
+            cl.enqueue_nd_range_kernel(queue, kernel, (CAPACITY,),(preferred_multiple,))
 
+
+
+        i += 1
     if k >= 31 and k % 32 == 31:
         row += 1
-
-total_elements = CAPACITY - cmax + 1
-print("KERNEL_NUM_ARGS", kernel.get_info(cl.kernel_info.NUM_ARGS))
-kernel.set_args(f0_mem,f1_mem, m_d_mem, numpy.uint32(cmax), weight_k, value_k, numpy.uint32(total_elements), numpy.uint32(power))
-
-cl.enqueue_nd_range_kernel(queue, kernel, (CAPACITY,),(preferred_multiple,))
-cl.enqueue_read_buffer(queue, m_d_mem, m_d).wait()
-
-print(m_d)
+        cl.enqueue_read_buffer(queue, m_d_mem, m_d, 0, is_blocking=True)
+        #Send back empty buffer to device
+        cl.enqueue_copy(queue, m_d_mem, numpy.zeros(CAPACITY+1).astype(numpy.uint32), is_blocking=True)
+        row += 1
+        M = numpy.append(M,m_d)
 
 
 
-myprint.printresults(M)
+if values.size%32 != 0:
+    print("Value size is less then 32 or is not a mod of 32")
+    cl.enqueue_read_buffer(queue, m_d_mem, m_d, 0, is_blocking=True)
+    M = numpy.append(M,m_d)
+
+myprint.printresults(M.tolist())
