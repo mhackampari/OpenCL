@@ -81,10 +81,10 @@ for k in range(0, values.size, 1):
 
         if i%2 == 0:
             kernel.set_args(f0_mem,f1_mem, m_d_mem, numpy.uint32(cmax), weight_k, value_k, numpy.uint32(total_elements), numpy.uint32(power))
-            cl.enqueue_nd_range_kernel(queue, kernel, (CAPACITY,),(preferred_multiple,))
+            cl.enqueue_nd_range_kernel(queue, kernel, (CAPACITY,),None)
         else:
             kernel.set_args(f1_mem, f0_mem, m_d_mem, numpy.uint32(cmax), weight_k, value_k, numpy.uint32(total_elements), numpy.uint32(power))
-            cl.enqueue_nd_range_kernel(queue, kernel, (CAPACITY,),(preferred_multiple,))
+            cl.enqueue_nd_range_kernel(queue, kernel, (CAPACITY,),None)
 
 
 
