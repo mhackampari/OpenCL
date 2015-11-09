@@ -2,9 +2,11 @@ ya__author__ = 'terminator'
 
 
 import pyopencl as cl
-import numpy
+import time
+import timeit
 from myconstants import *
 import printresult as myprint
+from chronometer import Chronometer
 
 platforms = cl.get_platforms()
 
@@ -64,6 +66,9 @@ for device in devices:
     f = numpy.zeros_like(f0)
     M = numpy.array([]).astype(numpy.uint32)
 
+    start = time.time()
+    chrono = Chronometer().start()
+
     for k in range(0, values.size, 1):
 
         weight_k = weights.take(k)
@@ -96,11 +101,16 @@ for device in devices:
             row += 1
             M = numpy.append(M,m_d)
 
-
-
     if values.size%32 != 0:
         print("Value size is less then 32 or is not a mod of 32")
         cl.enqueue_read_buffer(queue, m_d_mem, m_d, 0, is_blocking=True)
         M = numpy.append(M,m_d)
 
-    myprint.printresults(M.tolist())
+    stop = time.time()
+    chrono.stop()
+
+    print("Chrono: ", chrono.elapsed)
+    print("Time: ", stop-start)
+
+
+    myprint.printresults(M.tolist(), chrono.elapsed)
