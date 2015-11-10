@@ -65,17 +65,14 @@ else:
 
 srcKernel = '''
 void kernel knapsack(global uint *input_f, global uint *output_f, global uint *m_d, uint cmax, uint weightk, uint pk, uint maxelem, uint i){
-
                 if(get_global_id(0)<maxelem){
                     int c = get_global_id(0)+cmax;
                     if(input_f[c] < input_f[c - weightk] + pk){
                         output_f[c] = input_f[c - weightk] + pk;
-                        m_d[c] += pown(2.0,i);
-
-
+                        m_d[c] += 1 << i;
                     }
                     else{
-                    output_f[c] = input_f[c];
+                        output_f[c] = input_f[c];
                     }
                 }
             }
