@@ -3,7 +3,6 @@ ya__author__ = 'terminator'
 
 import pyopencl as cl
 import time
-import timeit
 from myconstants import *
 import printresult as myprint
 from chronometer import Chronometer

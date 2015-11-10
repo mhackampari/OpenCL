@@ -4,7 +4,7 @@ from myconstants import *
 
 #TODO: write results to file
 
-def printresults(M):
+def printresults(M, chrono):
     c = CAPACITY
     bit32 = 32
     worth = []
@@ -36,6 +36,8 @@ def printresults(M):
     
             bit32 -= 1
 
-    print("\nKnapsack Value: %d"%sum(worth))
+    print("\n**********************************")
+    print("Elapsed time: ", chrono)
+    print("Knapsack Value: %d"%sum(worth))
     print("Knapsack weight: %d"%sum(capacita))
     print("Worth aray:{0}\nWeight aray:{1}\n".format(worth, capacita))
