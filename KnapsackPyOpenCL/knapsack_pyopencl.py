@@ -59,15 +59,16 @@ for device in devices:
     cl.enqueue_copy(queue, f1_mem, f1, is_blocking=True)
     cl.enqueue_copy(queue, m_d_mem, m_d, is_blocking=True)
 
+    # for each device we have to reinitilize variables
     row = 0
     k = 0
     i = 0
     f = numpy.zeros_like(f0)
     M = numpy.array([]).astype(numpy.uint32)
+    sumW = values.sum()
 
     start = time.time()
     chrono = Chronometer().start()
-
     for k in range(0, values.size, 1):
 
         weight_k = weights.take(k)

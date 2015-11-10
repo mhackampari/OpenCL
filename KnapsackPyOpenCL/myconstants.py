@@ -14,7 +14,7 @@ m_d = numpy.array([0]).astype(numpy.uint32)
 #the same as above
 values = numpy.zeros(1).astype(numpy.uint32)
 weights = numpy.zeros(1).astype(numpy.uint32)
-sumW = int(0)
+sumW = numpy.uint32(0)
 
 
 try:
