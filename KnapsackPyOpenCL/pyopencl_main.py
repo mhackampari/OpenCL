@@ -9,6 +9,7 @@ class KnapsackOcl:
     devices = None
     work_group_size = None
     context = None
+    program = None
     kernel = None
     queue = None
     f0_mem = None
@@ -16,9 +17,11 @@ class KnapsackOcl:
     m_d_mem = None
     printonce = 0
 
-    def __init__(self, numelem, verbose=False):
+    def __init__(self, numelem, printonce=False, verbose=False):
         print()
+        self.printonce = printonce
         self.verbose = verbose
+
         self.datagen = datagen.Data(numelem, verbose=self.verbose)
 
     def generate_platforms(self):
@@ -26,7 +29,7 @@ class KnapsackOcl:
         platforms = cl.get_platforms()
 
         print("PLATFORM_NAME: {0}".format(platforms[0].name))
-        if self.verbose:
+        if self.verbose and self.printonce:
             print("PLATFORM_VERSION: {0}".format(platforms[0].version))
             print("PLATFORM_EXTENSIONS: {0}".format(platforms[0].extensions))
 
@@ -40,8 +43,8 @@ class KnapsackOcl:
         3. create program associated to source kernel code
         4. build program
         """
-
-        print("DEVICE_NAME: {0}".format(device.name))
+        if self.verbose or self.printonce:
+            print("DEVICE_NAME: {0}".format(device.name))
         """print device info"""
         if self.verbose:
             print("DEVICE_GLOBAL_MEM_SIZE: {0}".format(device.global_mem_size//1024//1024), 'MB')
@@ -49,13 +52,13 @@ class KnapsackOcl:
             print("MAX_WORK_ITEM_SIZES: ", device.max_work_item_sizes)
 
         self.work_group_size = device.max_work_group_size
-        if self.verbose:
+        if self.printonce:
             print("Work Group Size: ", self.work_group_size)
 
         self.context = cl.Context([device])
         """create context"""
 
-        if self.verbose:
+        if self.verbose  or self.printonce:
             print("Building kernel from source code: ")
             print("***********************************")
             print(myconst.srcKernel)
@@ -100,8 +103,11 @@ if __name__ == "__main__":
     elements = [elem for elem in range(500, 10**4+1, 500)]
 
     for i, num_elements in enumerate(elements):
-
-        ksack = KnapsackOcl(num_elements, print,verbose=False)
+        print("**************************************\n", elements)
+        if i == 0:
+             printonce = True
+             
+        ksack = KnapsackOcl(num_elements, printonce, verbose=False)
         for platform in ksack.generate_platforms():
             devices = platform.get_devices(cl.device_type.ALL)
             for device in devices:
