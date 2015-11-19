@@ -98,6 +98,11 @@ class KnapsackOcl:
                                  self.datagen.m_d.nbytes,
                                  hostbuf=self.datagen.m_d)
 
+        cl.enqueue_copy(self.queue, self.f0_mem, self.datagen.f0, is_blocking=True)
+        cl.enqueue_copy(self.queue, self.f1_mem, self.datagen.f1, is_blocking=True)
+        cl.enqueue_copy(self.queue, self.m_d_mem, self.datagen.m_d, is_blocking=True)
+
+
 if __name__ == "__main__":
     # generates elements [500..10000] at pace 500
     elements = [elem for elem in range(500, 10**4+1, 500)]
@@ -112,7 +117,9 @@ if __name__ == "__main__":
             devices = platform.get_devices(cl.device_type.ALL)
             for device in devices:
                 ksack.generate_context_build_program(device)
-                ksack.generate_memory_buffers_transfer_to_device()
+                for x in range(100):
+                    ksack.generate_memory_buffers_transfer_to_device()
+
 
 
 
