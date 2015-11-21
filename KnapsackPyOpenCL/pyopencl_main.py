@@ -1,6 +1,5 @@
 import numpy
 import pyopencl as cl
-#import myconstants as myconst
 import DataGen as datagen
 import time
 import printresult
@@ -41,6 +40,7 @@ class KnapsackOcl:
         print()
         self.printonce = printonce
         self.verbose = verbose
+        self.executiontime = 0
 
         self.datagen = datagen.Data(numelem, verbose=self.verbose)
 
@@ -194,18 +194,20 @@ class KnapsackOcl:
             self.M = numpy.append(self.M, self.datagen.m_d)
 
         stop = time.time()
-        self.executiontime = stop-start
+        self.executiontime += stop-start
 
-        print("Time: ", stop-start)
+        if self.verbose:
+            print("Time: ", stop-start)
 
 
 if __name__ == "__main__":
 
     # generates elements [500..10000] at pace 500
     elements = [elem for elem in range(100, 10**(4-1)+1, 100)]
+    cycles = 3
 
     for i, nelem in enumerate(elements):
-        print("**************************************\n", nelem)
+        print("############################################\n", nelem)
         printonce = False
         if i == 0:
              printonce = True
@@ -215,7 +217,7 @@ if __name__ == "__main__":
             devices = platform.get_devices(cl.device_type.ALL)
             for device in devices:
                 ksack.generate_context_build_program(device)
-                for x in range(1):
+                for x in range(cycles):
                     ksack.generate_memory_buffers_transfer_to_device()
                     ksack.execute_on_device()
 
@@ -224,7 +226,7 @@ if __name__ == "__main__":
                                          ksack.datagen.values,
                                          ksack.datagen.capacity,
                                          ksack.datagen.values.size,
-                                         ksack.executiontime)
+                                         ksack.executiontime, cycles)
 
 
 
