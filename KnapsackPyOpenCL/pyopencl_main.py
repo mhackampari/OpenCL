@@ -2,7 +2,7 @@ import numpy
 import pyopencl as cl
 import DataGen as datagen
 import time
-import printresult
+from math import ceil
 
 srcKernel = '''
 void kernel knapsack(global uint *input_f, global uint *output_f, global uint *m_d, uint cmax, uint weightk, uint pk, uint maxelem, uint i){
@@ -199,6 +199,48 @@ class KnapsackOcl:
         if self.verbose:
             print("Time: ", stop-start)
 
+    def print_results(self, decision_matrix, weights, values, capacity, number_elements, chrono, cycles):
+
+        # TODO: write results to file
+
+        CAPACITY = capacity
+        NUMOBJ = ceil(number_elements/32)
+        M = decision_matrix
+        c = CAPACITY
+        worth = []
+        capacita = []
+
+        for i in range(NUMOBJ-1, -1, -1):
+
+            bit32 = 32
+            if self.verbose:
+                print("**total_elements%32**\n")
+
+            while bit32 > 0 and c > 0:
+
+                m = M[i*(CAPACITY+1) + c]
+                bit32pw = pow(2, (bit32-1))
+
+                if bit32pw == (bit32pw & m):
+
+                    weight = weights[i*32+bit32-1]
+                    value = values[i*32+bit32-1]
+                    c -= weight
+                    capacita.append(weight)
+                    worth.append(value)
+                    if self.verbose:
+                        print("KNAPSACK VALUE: ", worth)
+
+                bit32 -= 1
+
+        print("\n**********************************")
+        print("Elapsed average time: ", chrono/cycles)
+        print("Knapsack Value: %d" % sum(worth))
+        print("Knapsack weight: %d" % sum(capacita))
+        print("Knapsack capacity: %d" % CAPACITY)
+        if self.verbose:
+            print("Worth aray:{0}\nWeight aray:{1}\n".format(worth, capacita))
+
 
 if __name__ == "__main__":
 
@@ -208,11 +250,11 @@ if __name__ == "__main__":
 
     for i, nelem in enumerate(elements):
         print("############################################\n", nelem)
-        printonce = False
+        print_once = False
         if i == 0:
-             printonce = True
+             print_once = True
              
-        ksack = KnapsackOcl(nelem, printonce, verbose=False)
+        ksack = KnapsackOcl(nelem, print_once, verbose=False)
         for platform in ksack.generate_platforms():
             devices = platform.get_devices(cl.device_type.ALL)
             for device in devices:
@@ -221,12 +263,12 @@ if __name__ == "__main__":
                     ksack.generate_memory_buffers_transfer_to_device()
                     ksack.execute_on_device()
 
-                printresult.printresults(ksack.M,
-                                         ksack.datagen.weights,
-                                         ksack.datagen.values,
-                                         ksack.datagen.capacity,
-                                         ksack.datagen.values.size,
-                                         ksack.executiontime, cycles)
+                ksack.print_results(ksack.M,
+                                   ksack.datagen.weights,
+                                   ksack.datagen.values,
+                                   ksack.datagen.capacity,
+                                   ksack.datagen.values.size,
+                                   ksack.executiontime, cycles)
 
 
 
