@@ -1,6 +1,6 @@
 import os
 import numpy
-import math
+import csv
 
 print("Loading ", os.path.basename(__file__))
 
@@ -21,33 +21,42 @@ class Data:
     """
 
 
-    def __init__(self, numelem=100, maxweight=20, verbose=False):
+    def __init__(self, filename="data", numelem=100, maxweight=20, verbose=False):
         """Form a complex number.
 
         Keyword arguments:
         numelem -- number of elements to be initialized (default=100)
         maxweight -- the upper limit for random generation: weight in [1..20] (default=20)
-        verbose -- verobsity flag for stdrout
+        verbose -- verobsity flag for stdout
         """
 
         self.__numelem = numelem
         self.weights = numpy.random.random_integers(1, maxweight, size=self.__numelem).astype(numpy.uint32)
         self.values = numpy.random.random_integers(1, maxweight*2, size=self.__numelem).astype(numpy.uint32)
-        self.sumofweights = self.weights.sum()
+        self.sumofweights = numpy.uint32(self.weights.sum())
         self.capacity = numpy.uint32(self.sumofweights/2)
         self.f0 = numpy.zeros(self.capacity+1).astype(numpy.uint32)
         self.f1 = numpy.zeros_like(self.f0)
         self.m_d = numpy.zeros_like(self.f0)
 
-        """Expport generated data to file"""
+        """Export generated data to file"""
 
-        filename = "data" + str(numelem)
+        self.filename = filename + str(numelem)
         weightsandvalues = list(zip(self.weights, self.values))
-        with open(filename, "w") as file:
-            file.write("Capacity: %d\n" % self.capacity)
-            for tuple in weightsandvalues:
-                file.write("w: {0}  v: {1}\n".format(tuple[0], tuple[1]))
-            file.close
+
+        with open(self.filename+".csv", "w", newline='') as csvfile:
+
+            fieldnames = ["Capacity", "Weight", "Value", "KnapsackW", "KnapsackV", "AvgTime"]
+            csvwriter = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            csvwriter.writeheader()
+
+            tuple = weightsandvalues[0]
+            csvwriter.writerow({'Weight': tuple[0], 'Value': tuple[1], 'Capacity': self.capacity})
+
+            for tuple in weightsandvalues[1:]:
+                csvwriter.writerow({'Weight': tuple[0], 'Value': tuple[1]})
+
+            csvfile.close()
 
     def __str__(self):
 
@@ -64,36 +73,32 @@ print("Ended loading ", os.path.basename(__file__))
 # Used when it runs as standalone file (when it is not imported)
 # Used for unit tests
 if __name__ == "__main__":
-    mytest = Data(numelem=10)
+    numelem = 10
+    filename = "data"
+    mytest = Data(numelem=numelem)
     try:
-        with open("data"+str(10), "r") as file:
-            #print(file.readline()[-2])
-            #print(file.readlines())
 
-            try:
-                tmpline = file.readline()
-                tmpCap = tmpline.split()[-1]
-                assert(numpy.uint32(tmpCap) == mytest.capacity)
-                print("Capacity OK: ", mytest.capacity)
+        with open(filename+str(numelem)+".csv", "r", newline="") as csvfile:
+            read_header = ['KnapsackW', 'KnapsackV', 'AvgTime']
+            csvreader = csv.DictReader(csvfile)
 
-            except AssertionError as inst:
-                print(inst)
-                print("Capacity are not equal, or wrong formatting")
-                print("Control: {} vs {} values".format(tmpline, mytest.capacity))
-                file.close()
+            print("reading file csv")
+            # reading the first line
+            line = next(csvreader)
+            capacity = int(line["Capacity"])
+            sumweights = int(line["Weight"])
+            print(line)
 
-            weightiter = iter(mytest.weights)
-            for index, line in enumerate(file.readlines()):
-                tmpWeight = line.split()[1]
-                try:
-                    assert(numpy.uint32(tmpWeight) == next(weightiter))
-                except AssertionError as inst:
-                    print(inst)
-                    print(("File's object is different from generated object at line: ", index))
-                    print("Mismatch happened on: ", line[1])
-                    file.close()
+            for i, line in enumerate(csvreader):
+                # i+1 because the first line has been read above
+                print(i+1, line["Weight"], line["Value"])
+                sumweights += int(line["Weight"])
+            csvfile.close()
+            print(sumweights//2)
+            assert(sumweights//2 == capacity)
 
-    except Exception as e:
+    except AssertionError as e:
         print(e)
     else:
+
         print("Test passed")
