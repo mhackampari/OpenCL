@@ -1,6 +1,5 @@
 import numpy
 import pyopencl as cl
-import DataGen as datagen
 import time
 import csv
 from math import ceil
@@ -36,14 +35,51 @@ class KnapsackOcl:
     M = None
     executiontime = None
     printonce = 0
+    cycles = 1
 
-    def __init__(self, numelem, printonce=False, verbose=False):
-        print()
+    def __init__(self, numelem=100, cycles=1, maxweight=20, filename="data", printonce=False, verbose=False):
+        """Initialize data and persist them on csv file.
+
+        Keyword arguments:
+        numelem     -- number of elements to be initialized (default=100)
+        cycles      -- number of cycles for each computation
+        maxweight   -- the upper limit for random generation: weight in [1..20] (default=20)
+        filename    -- the name of the file where to persist the data
+        printonce   -- prints once some of the info about devices and building info
+        verbose     -- verobsity flag for stdout extra printing
+        """
+
         self.printonce = printonce
         self.verbose = verbose
         self.executiontime = 0
+        self.__numelem = numelem
+        self.weights = numpy.random.random_integers(1, maxweight, size=self.__numelem).astype(numpy.uint32)
+        self.values = numpy.random.random_integers(1, maxweight*2, size=self.__numelem).astype(numpy.uint32)
+        self.sumofweights = numpy.uint32(self.weights.sum())
+        self.capacity = numpy.uint32(self.sumofweights/2)
+        self.f0 = numpy.zeros(self.capacity+1).astype(numpy.uint32)
+        self.f1 = numpy.zeros_like(self.f0)
+        self.m_d = numpy.zeros_like(self.f0)
+        self.cycles = cycles
 
-        self.datagen = datagen.Data(numelem=numelem, verbose=self.verbose)
+        """Export generated data to file"""
+
+        self.filename = filename + str(numelem)
+        weightsandvalues = list(zip(self.weights, self.values))
+
+        with open(self.filename+".csv", "w", newline='') as csvfile:
+
+            fieldnames = ["Capacity", "Weight", "Value", "KnapsackW", "KnapsackV", "AvgTime"]
+            csvwriter = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            csvwriter.writeheader()
+
+            tuple = weightsandvalues[0]
+            csvwriter.writerow({'Weight': tuple[0], 'Value': tuple[1], 'Capacity': self.capacity})
+
+            for tuple in weightsandvalues[1:]:
+                csvwriter.writerow({'Weight': tuple[0], 'Value': tuple[1]})
+
+            csvfile.close()
 
     def generate_platforms(self):
 
@@ -109,21 +145,21 @@ class KnapsackOcl:
         # create opencl buffer
         self.f0_mem = cl.Buffer(self.context,
                                 cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR,
-                                size=self.datagen.f0.nbytes,
-                                hostbuf=self.datagen.f0)
+                                size=self.f0.nbytes,
+                                hostbuf=self.f0)
         self.f1_mem = cl.Buffer(self.context,
                                 cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR,
-                                size=self.datagen.f1.nbytes,
-                                hostbuf=self.datagen.f1)
+                                size=self.f1.nbytes,
+                                hostbuf=self.f1)
         self.m_d_mem = cl.Buffer(self.context,
                                  cl.mem_flags.WRITE_ONLY | cl.mem_flags.COPY_HOST_PTR,
-                                 self.datagen.m_d.nbytes,
-                                 hostbuf=self.datagen.m_d)
+                                 self.m_d.nbytes,
+                                 hostbuf=self.m_d)
 
         # write/transfer buffer synchronously (is_blocking) to device memory
-        cl.enqueue_copy(self.queue, self.f0_mem, self.datagen.f0, is_blocking=True)
-        cl.enqueue_copy(self.queue, self.f1_mem, self.datagen.f1, is_blocking=True)
-        cl.enqueue_copy(self.queue, self.m_d_mem, self.datagen.m_d, is_blocking=True)
+        cl.enqueue_copy(self.queue, self.f0_mem, self.f0, is_blocking=True)
+        cl.enqueue_copy(self.queue, self.f1_mem, self.f1, is_blocking=True)
+        cl.enqueue_copy(self.queue, self.m_d_mem, self.m_d, is_blocking=True)
 
     def execute_on_device(self):
 
@@ -132,15 +168,15 @@ class KnapsackOcl:
         k = 0
         i = 0
         self.M = numpy.array([]).astype(numpy.uint32)
-        sumofweights = self.datagen.sumofweights
-        valuesize = self.datagen.values.size
-        CAPACITY = int(self.datagen.capacity)
+        sumofweights = self.sumofweights
+        valuesize = self.values.size
+        CAPACITY = int(self.capacity)
 
         start = time.time()
         for k in range(0, valuesize, 1):
 
-            weight_k = self.datagen.weights.take(k)
-            value_k = self.datagen.values.take(k)
+            weight_k = self.weights.take(k)
+            value_k = self.values.take(k)
 
             sumofweights = sumofweights - weight_k
             if CAPACITY - sumofweights > weight_k:
@@ -181,18 +217,18 @@ class KnapsackOcl:
             if k >= 31 and k % 32 == 31:
                 row += 1
                 # writes synchronously back from device buffer to host
-                cl.enqueue_read_buffer(self.queue, self.m_d_mem, self.datagen.m_d, 0, is_blocking=True)
+                cl.enqueue_read_buffer(self.queue, self.m_d_mem, self.m_d, 0, is_blocking=True)
                 # Send back empty buffer to device
                 cl.enqueue_copy(self.queue, self.m_d_mem, numpy.zeros(CAPACITY+1).astype(numpy.uint32), is_blocking=True)
                 row += 1
-                self.M = numpy.append(self.M, self.datagen.m_d)
+                self.M = numpy.append(self.M, self.m_d)
 
         # if elements are not (mod 32) then we need an extra transfer
         if valuesize % 32 != 0:
             if self.verbose:
                 print("Value size is less then 32 or is not a mod of 32")
-            cl.enqueue_read_buffer(self.queue, self.m_d_mem, self.datagen.m_d, 0, is_blocking=True)
-            self.M = numpy.append(self.M, self.datagen.m_d)
+            cl.enqueue_read_buffer(self.queue, self.m_d_mem, self.m_d, 0, is_blocking=True)
+            self.M = numpy.append(self.M, self.m_d)
 
         stop = time.time()
         self.executiontime += stop-start
@@ -200,13 +236,11 @@ class KnapsackOcl:
         if self.verbose:
             print("Time: ", stop-start)
 
-    def print_results(self, decision_matrix, weights, values, capacity, number_elements, chrono, cycles):
+    def print_results(self):
 
-        # TODO: write results to file
-
-        CAPACITY = capacity
-        NUMOBJ = ceil(number_elements/32)
-        M = decision_matrix
+        CAPACITY = self.capacity
+        NUMOBJ = ceil(self.__numelem/32)
+        M = self.M
         c = CAPACITY
         worth = []
         capacita = []
@@ -224,8 +258,8 @@ class KnapsackOcl:
 
                 if bit32pw == (bit32pw & m):
 
-                    weight = weights[i*32+bit32-1]
-                    value = values[i*32+bit32-1]
+                    weight = self.weights[i*32+bit32-1]
+                    value = self.values[i*32+bit32-1]
                     c -= weight
                     capacita.append(weight)
                     worth.append(value)
@@ -234,20 +268,23 @@ class KnapsackOcl:
 
                 bit32 -= 1
 
+        avg_time = self.executiontime/self.cycles
+
         print("\n**********************************")
-        print("Elapsed average time: ", chrono/cycles)
+        print("Elapsed average time: ", avg_time)
         print("Knapsack Value: %d" % sum(worth))
         print("Knapsack weight: %d" % sum(capacita))
         print("Knapsack capacity: %d" % CAPACITY)
         if self.verbose:
             print("Worth aray:{0}\nWeight aray:{1}\n".format(worth, capacita))
 
-        outputfile = "data" + str(number_elements) + ".csv"
+        outputfile = "data" + str(self.__numelem) + ".csv"
+
         with open(outputfile, "a", newline="") as csvfile:
 
             fieldnames = ["Capacity", "Weight", "Value", "KnapsackW", "KnapsackV", "AvgTime"]
             csvwriter = csv.DictWriter(csvfile, fieldnames=fieldnames)
-            data = {"KnapsackV": sum(worth), "KnapsackW": sum(capacita), "AvgTime": chrono/cycles}
+            data = {"KnapsackV": sum(worth), "KnapsackW": sum(capacita), "AvgTime": avg_time}
 
             csvwriter.writerow(data)
             csvfile.close()
@@ -265,7 +302,7 @@ if __name__ == "__main__":
         if i == 0:
              print_once = True
 
-        ksack = KnapsackOcl(nelem, print_once, verbose=False)
+        ksack = KnapsackOcl(numelem=nelem, cycles=cycles, printonce=print_once, verbose=False)
         for platform in ksack.generate_platforms():
             devices = platform.get_devices(cl.device_type.ALL)
             for device in devices:
@@ -274,14 +311,10 @@ if __name__ == "__main__":
                     ksack.generate_memory_buffers_transfer_to_device()
                     ksack.execute_on_device()
 
-                ksack.print_results(ksack.M,
-                                   ksack.datagen.weights,
-                                   ksack.datagen.values,
-                                   ksack.datagen.capacity,
-                                   ksack.datagen.values.size,
-                                   ksack.executiontime, cycles)
+                ksack.print_results()
 
-
+# TODO: create summary file
+# TODO: append device name to file
 
 
 
