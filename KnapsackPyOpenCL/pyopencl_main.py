@@ -36,8 +36,11 @@ class KnapsackOcl:
     executiontime = None
     printonce = 0
     cycles = 1
+    device_name = None
+    fieldnames = ["Device", "Weight", "Value", "Capacity", "KnapsackW", "KnapsackV", "AvgTime"]
+    summary_headers = ["#Elems", "Device", "SumWeight", "SumValue", "Capacity", "KnapsackW", "KnapsackV", "AvgTime", "Mem (MB)"]
 
-    def __init__(self, numelem=100, cycles=1, maxweight=20, filename="data", printonce=False, verbose=False):
+    def __init__(self, numelem=100, cycles=1, maxweight=100, filename="data", printonce=False, verbose=False):
         """Initialize data and persist them on csv file.
 
         Keyword arguments:
@@ -62,24 +65,7 @@ class KnapsackOcl:
         self.m_d = numpy.zeros_like(self.f0)
         self.cycles = cycles
 
-        """Export generated data to file"""
 
-        self.filename = filename + str(numelem)
-        weightsandvalues = list(zip(self.weights, self.values))
-
-        with open(self.filename+".csv", "w", newline='') as csvfile:
-
-            fieldnames = ["Capacity", "Weight", "Value", "KnapsackW", "KnapsackV", "AvgTime"]
-            csvwriter = csv.DictWriter(csvfile, fieldnames=fieldnames)
-            csvwriter.writeheader()
-
-            tuple = weightsandvalues[0]
-            csvwriter.writerow({'Weight': tuple[0], 'Value': tuple[1], 'Capacity': self.capacity})
-
-            for tuple in weightsandvalues[1:]:
-                csvwriter.writerow({'Weight': tuple[0], 'Value': tuple[1]})
-
-            csvfile.close()
 
     def generate_platforms(self):
 
@@ -102,6 +88,7 @@ class KnapsackOcl:
         """
 
         print("DEVICE_NAME: {0}".format(device.name))
+        self.device_name = device.name
         """print device info"""
         if self.verbose:
             print("DEVICE_GLOBAL_MEM_SIZE: {0}".format(device.global_mem_size//1024//1024), 'MB')
@@ -278,14 +265,51 @@ class KnapsackOcl:
         if self.verbose:
             print("Worth aray:{0}\nWeight aray:{1}\n".format(worth, capacita))
 
-        outputfile = "data" + str(self.__numelem) + ".csv"
 
-        with open(outputfile, "a", newline="") as csvfile:
+        """Export generated data to file"""
 
-            fieldnames = ["Capacity", "Weight", "Value", "KnapsackW", "KnapsackV", "AvgTime"]
-            csvwriter = csv.DictWriter(csvfile, fieldnames=fieldnames)
-            data = {"KnapsackV": sum(worth), "KnapsackW": sum(capacita), "AvgTime": avg_time}
+        outputfile = str(self.__numelem) + self.device_name + ".csv"
+        weightsandvalues = list(zip(self.weights, self.values))
+        tuple = weightsandvalues[0]
 
+        with open(outputfile, "w", newline='') as csvfile:
+
+            csvwriter = csv.DictWriter(csvfile, fieldnames=self.fieldnames)
+            csvwriter.writeheader()
+            data = {"Device": self.device_name,
+                    'Weight': tuple[0],
+                    'Value': tuple[1],
+                    'Capacity': self.capacity,
+                    "KnapsackV": sum(worth),
+                    "KnapsackW": sum(capacita),
+                    "AvgTime": avg_time}
+            csvwriter.writerow(data)
+
+            for tuple in weightsandvalues[1:]:
+                csvwriter.writerow({'Weight': tuple[0], 'Value': tuple[1]})
+
+            csvfile.close()
+
+        # summary data
+        with open("summary.csv", "a", newline="") as csvfile:
+
+            # memory occupancy MB = [(f0_length + f1_length) * typeof(f0)] // KB // MB
+            mem_occupancy = (self.capacity * self.f0.nbytes/(self.capacity+1) * 2) / 1024 / 1024
+            if self.verbose:
+                print("MB mem occupancy {:.2f}".format(mem_occupancy))
+
+            csvwriter = csv.DictWriter(csvfile, fieldnames=self.summary_headers)
+            if self.printonce:
+                csvwriter.writeheader()
+            data = {"#Elems": self.__numelem,
+                    "Device": self.device_name,
+                    'SumWeight': sum(self.weights),
+                    'SumValue': sum(self.values),
+                    'Capacity': self.capacity,
+                    "KnapsackV": sum(worth),
+                    "KnapsackW": sum(capacita),
+                    "AvgTime": avg_time,
+                    "Mem (MB)": "{:.2f}".format(mem_occupancy)}
             csvwriter.writerow(data)
             csvfile.close()
 
@@ -294,7 +318,11 @@ if __name__ == "__main__":
 
     # generates elements [500..10000] at pace 500
     elements = [elem for elem in range(100, 10**(4-1)+1, 100)]
-    cycles = 3
+    cycles = 100
+
+    # create file summary, overwrites if any exists
+    file = open("summary.csv", "w", newline="")
+    file.close()
 
     for i, nelem in enumerate(elements):
         print("############################################\n", nelem)
@@ -313,8 +341,8 @@ if __name__ == "__main__":
 
                 ksack.print_results()
 
-# TODO: create summary file
-# TODO: append device name to file
+
+# TODO: command arg parser
 
 
 
