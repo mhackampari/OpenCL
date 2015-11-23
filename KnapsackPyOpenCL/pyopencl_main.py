@@ -2,6 +2,7 @@ import numpy
 import pyopencl as cl
 import DataGen as datagen
 import time
+import csv
 from math import ceil
 
 srcKernel = '''
@@ -42,7 +43,7 @@ class KnapsackOcl:
         self.verbose = verbose
         self.executiontime = 0
 
-        self.datagen = datagen.Data(numelem, verbose=self.verbose)
+        self.datagen = datagen.Data(numelem=numelem, verbose=self.verbose)
 
     def generate_platforms(self):
 
@@ -241,6 +242,16 @@ class KnapsackOcl:
         if self.verbose:
             print("Worth aray:{0}\nWeight aray:{1}\n".format(worth, capacita))
 
+        outputfile = "data" + str(number_elements) + ".csv"
+        with open(outputfile, "a", newline="") as csvfile:
+
+            fieldnames = ["Capacity", "Weight", "Value", "KnapsackW", "KnapsackV", "AvgTime"]
+            csvwriter = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            data = {"KnapsackV": sum(worth), "KnapsackW": sum(capacita), "AvgTime": chrono/cycles}
+
+            csvwriter.writerow(data)
+            csvfile.close()
+
 
 if __name__ == "__main__":
 
@@ -253,7 +264,7 @@ if __name__ == "__main__":
         print_once = False
         if i == 0:
              print_once = True
-             
+
         ksack = KnapsackOcl(nelem, print_once, verbose=False)
         for platform in ksack.generate_platforms():
             devices = platform.get_devices(cl.device_type.ALL)
