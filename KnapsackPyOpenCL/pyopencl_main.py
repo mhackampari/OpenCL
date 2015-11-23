@@ -313,6 +313,19 @@ class KnapsackOcl:
             csvwriter.writerow(data)
             csvfile.close()
 
+    def zipall(self):
+
+        import zipfile
+        import socket
+        import glob
+        import os
+        csv_files = glob.glob('./*.csv')
+        with zipfile.ZipFile(socket.gethostname()+".zip", 'w', zipfile.ZIP_DEFLATED) as myzip:
+            for file in csv_files:
+                myzip.write(file)
+        for f in csv_files:
+            os.remove(f)
+
 
 if __name__ == "__main__":
 
@@ -340,6 +353,8 @@ if __name__ == "__main__":
                     ksack.execute_on_device()
 
                 ksack.print_results()
+
+    ksack.zipall()
 
 
 # TODO: command arg parser
