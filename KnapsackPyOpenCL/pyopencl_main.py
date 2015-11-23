@@ -268,7 +268,7 @@ class KnapsackOcl:
 
         """Export generated data to file"""
 
-        outputfile = str(self.__numelem) + self.device_name + ".csv"
+        outputfile = str(self.__numelem) + "-" + self.device_name.strip().replace(" ", "_") + ".csv"
         weightsandvalues = list(zip(self.weights, self.values))
         tuple = weightsandvalues[0]
 
