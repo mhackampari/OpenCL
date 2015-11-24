@@ -1,3 +1,4 @@
+import argparse
 import numpy
 import pyopencl as cl
 import time
@@ -96,13 +97,13 @@ class KnapsackOcl:
             print("MAX_WORK_ITEM_SIZES: ", device.max_work_item_sizes)
 
         self.work_group_size = device.max_work_group_size
-        if self.printonce:
+        if self.verbose:
             print("Work Group Size: ", self.work_group_size)
 
         self.context = cl.Context([device])
         """create context"""
 
-        if self.verbose or self.printonce:
+        if self.verbose:
             print("Building kernel from source code: ")
             print("***********************************")
             print(srcKernel)
@@ -119,7 +120,7 @@ class KnapsackOcl:
             """"in case of failure prints error to stdout"""
             raise
         else:
-            if self.verbose:
+            if self.printonce:
                 print("Program has been built!")
 
         self.queue = cl.CommandQueue(self.context)
@@ -339,17 +340,41 @@ class KnapsackOcl:
 
 if __name__ == "__main__":
 
-    # generates elements [500..10000] at pace 500
-    elements = [elem for elem in range(100, 10**(4-1)+1, 100)]
-    cycles = 100
+    parser = argparse.ArgumentParser(description='Overrides default variables')
+    parser.add_argument('-v', '--verbose', dest='verbose', action='store_true',
+                        help='prints most of the info')
+    parser.add_argument('-c', '--cycles', dest='cycles', action='store',
+                        choices={1, 5, 10, 50, 100}, default=1, type=int,
+                        help='number of cycles to execute knapsack on')
+    parser.add_argument('-p', '--pace', dest='pace', action='store',
+                        choices={100, 500, 1000}, default=100, type=int,
+                        help='sets the pace to advance through list of elements, '
+                             'i.e. the amount to increment the iterator. '
+                             'This value also is used to initialize the first element of the list'
+                             'elements [init, init+pace,..upper_limit] at pace "--pace"')
+    parser.add_argument('-e', '--elements', dest='elements', action='store', default=1000, type=int,
+                        help='upper limit of the list')
+    args = parser.parse_args()
 
-    for i, nelem in enumerate(elements):
+    cycles = args.cycles
+    upper_limit = args.elements
+    pace = args.pace
+    verbose = args.verbose
+    init = args.pace
+
+    # generates elements [init, init+pace,..upper_limit] at pace "pace"
+    elements = [elem for elem in range(init, upper_limit+1, pace)]
+
+    for nelem in elements:
         print("############################################\n", nelem)
-        print_once = False
-        if i == 0:
-             print_once = True
+
         for j in range(cycles):
-            ksack = KnapsackOcl(numelem=nelem, cycles=cycles, printonce=print_once, verbose=False)
+            print_once = False
+            if j == 0:
+                print_once = True
+
+            ksack = KnapsackOcl(numelem=nelem, printonce=print_once, verbose=False)
+
             for platform in ksack.generate_platforms():
                 devices = platform.get_devices(cl.device_type.ALL)
                 for device in devices:
@@ -362,8 +387,6 @@ if __name__ == "__main__":
 
     ksack.zipall()
 
-
-# TODO: command arg parser
 
 
 
