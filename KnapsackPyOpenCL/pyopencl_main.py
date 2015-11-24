@@ -272,26 +272,38 @@ class KnapsackOcl:
         weightsandvalues = list(zip(self.weights, self.values))
         tuple = weightsandvalues[0]
 
-        with open(outputfile, "w", newline='') as csvfile:
+        if self.verbose:
+            with open(outputfile, "a", newline='') as csvfile:
 
-            csvwriter = csv.DictWriter(csvfile, fieldnames=self.fieldnames)
-            csvwriter.writeheader()
-            data = {"Device": self.device_name,
-                    'Weight': tuple[0],
-                    'Value': tuple[1],
-                    'Capacity': self.capacity,
-                    "KnapsackV": sum(worth),
-                    "KnapsackW": sum(capacita),
-                    "AvgTime": avg_time}
-            csvwriter.writerow(data)
+                csvwriter = csv.DictWriter(csvfile, fieldnames=self.fieldnames)
+                csvwriter.writeheader()
+                data = {"Device": self.device_name,
+                        'Weight': tuple[0],
+                        'Value': tuple[1],
+                        'Capacity': self.capacity,
+                        "KnapsackV": sum(worth),
+                        "KnapsackW": sum(capacita),
+                        "AvgTime": avg_time}
+                csvwriter.writerow(data)
 
-            for tuple in weightsandvalues[1:]:
-                csvwriter.writerow({'Weight': tuple[0], 'Value': tuple[1]})
+                for tuple in weightsandvalues[1:]:
+                    csvwriter.writerow({'Weight': tuple[0], 'Value': tuple[1]})
 
-            csvfile.close()
+                csvfile.close()
 
         # summary data
-        with open("summary.csv", "a", newline="") as csvfile:
+        import os
+        summary_file = "summary" + ".csv"
+        path = "./" + summary_file
+
+        if not(os.path.exists(path)):
+            print("Creating file ", path)
+            with open(summary_file, "a", newline="") as csvfile:
+                csvwriter = csv.DictWriter(csvfile, fieldnames=self.summary_headers)
+                csvwriter.writeheader()
+                csvfile.close()
+
+        with open(summary_file, "a", newline="") as csvfile:
 
             # memory occupancy MB = [(f0_length + f1_length) * typeof(f0)] // KB // MB
             mem_occupancy = (self.capacity * self.f0.nbytes/(self.capacity+1) * 2) / 1024 / 1024
@@ -299,8 +311,6 @@ class KnapsackOcl:
                 print("MB mem occupancy {:.2f}".format(mem_occupancy))
 
             csvwriter = csv.DictWriter(csvfile, fieldnames=self.summary_headers)
-            if self.printonce:
-                csvwriter.writeheader()
             data = {"#Elems": self.__numelem,
                     "Device": self.device_name,
                     'SumWeight': sum(self.weights),
@@ -333,26 +343,22 @@ if __name__ == "__main__":
     elements = [elem for elem in range(100, 10**(4-1)+1, 100)]
     cycles = 100
 
-    # create file summary, overwrites if any exists
-    file = open("summary.csv", "w", newline="")
-    file.close()
-
     for i, nelem in enumerate(elements):
         print("############################################\n", nelem)
         print_once = False
         if i == 0:
              print_once = True
+        for j in range(cycles):
+            ksack = KnapsackOcl(numelem=nelem, cycles=cycles, printonce=print_once, verbose=False)
+            for platform in ksack.generate_platforms():
+                devices = platform.get_devices(cl.device_type.ALL)
+                for device in devices:
+                    ksack.generate_context_build_program(device)
 
-        ksack = KnapsackOcl(numelem=nelem, cycles=cycles, printonce=print_once, verbose=False)
-        for platform in ksack.generate_platforms():
-            devices = platform.get_devices(cl.device_type.ALL)
-            for device in devices:
-                ksack.generate_context_build_program(device)
-                for x in range(cycles):
                     ksack.generate_memory_buffers_transfer_to_device()
                     ksack.execute_on_device()
 
-                ksack.print_results()
+                    ksack.print_results()
 
     ksack.zipall()
 
