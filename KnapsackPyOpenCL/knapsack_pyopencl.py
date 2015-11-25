@@ -6,6 +6,9 @@ import time
 from myconstants import *
 import printresult as myprint
 from chronometer import Chronometer
+import DataGen as datag
+
+dg = datag.Data("Ciao da main")
 
 platforms = cl.get_platforms()
 
@@ -18,7 +21,7 @@ devices = platforms[0].get_devices(cl.device_type.ALL)
 for device in devices:
     print("DEVICE_NAME: {0}".format(device.name))
     print("DEVICE_GLOBAL_MEM_SIZE: {0}".format(device.global_mem_size//1024//1024), 'MB')
-    print("MAX_WORK_GROUP_SIZE: ",device.max_work_group_size)
+    print("MAX_WORK_GROUP_SIZE: ", device.max_work_group_size)
     print("MAX_WORK_ITEM_SIZES: ", device.max_work_item_sizes)
 
     WG = device.max_work_group_size
@@ -29,7 +32,7 @@ for device in devices:
         program.build(["-cl-no-signed-zeros"])
     except:
         print("Build log:")
-        print(program.get_build_info(device,cl.program_build_info.LOG))
+        print(program.get_build_info(device, cl.program_build_info.LOG))
         raise
     else:
         print("Program has been built!")
@@ -59,7 +62,7 @@ for device in devices:
     cl.enqueue_copy(queue, f1_mem, f1, is_blocking=True)
     cl.enqueue_copy(queue, m_d_mem, m_d, is_blocking=True)
 
-    # for each device we have to reinitilize variables
+    # for each device we have to reinitialize variables
     row = 0
     k = 0
     i = 0
@@ -84,33 +87,31 @@ for device in devices:
             power = k % 32
 
             if i%2 == 0:
-                kernel.set_args(f0_mem,f1_mem, m_d_mem, numpy.uint32(cmax), weight_k, value_k, numpy.uint32(total_elements), numpy.uint32(power))
-                cl.enqueue_nd_range_kernel(queue, kernel, (CAPACITY,),None)
+                kernel.set_args(f0_mem, f1_mem, m_d_mem, numpy.uint32(cmax), weight_k, value_k, numpy.uint32(total_elements), numpy.uint32(power))
+                cl.enqueue_nd_range_kernel(queue, kernel, (CAPACITY,), None)
             else:
                 kernel.set_args(f1_mem, f0_mem, m_d_mem, numpy.uint32(cmax), weight_k, value_k, numpy.uint32(total_elements), numpy.uint32(power))
-                cl.enqueue_nd_range_kernel(queue, kernel, (CAPACITY,),None)
-
-
+                cl.enqueue_nd_range_kernel(queue, kernel, (CAPACITY,), None)
 
             i += 1
+
         if k >= 31 and k % 32 == 31:
             row += 1
             cl.enqueue_read_buffer(queue, m_d_mem, m_d, 0, is_blocking=True)
-            #Send back empty buffer to device
+            # Send back empty buffer to device
             cl.enqueue_copy(queue, m_d_mem, numpy.zeros(CAPACITY+1).astype(numpy.uint32), is_blocking=True)
             row += 1
-            M = numpy.append(M,m_d)
+            M = numpy.append(M, m_d)
 
-    if values.size%32 != 0:
+    if values.size % 32 != 0:
         print("Value size is less then 32 or is not a mod of 32")
         cl.enqueue_read_buffer(queue, m_d_mem, m_d, 0, is_blocking=True)
-        M = numpy.append(M,m_d)
+        M = numpy.append(M, m_d)
 
     stop = time.time()
     chrono.stop()
 
     print("Chrono: ", chrono.elapsed)
     print("Time: ", stop-start)
-
 
     myprint.printresults(M.tolist(), chrono.elapsed)

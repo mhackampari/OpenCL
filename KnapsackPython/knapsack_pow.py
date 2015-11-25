@@ -1,8 +1,8 @@
 import math
 
-f = open('datafile', 'r')
+f = open('data500', 'r')
 
-tmpArray = f.next()
+tmpArray = f.readline()
 #take first line and extract second element of the array
 myCap = int(tmpArray.split()[1])
 
@@ -90,7 +90,7 @@ capacita = []
 
 
 
-for i in range(NUMOBJ-1, -1, -1
+for i in range(NUMOBJ-1, -1, -1):
     bit32 = 32
     print("**numobj%32**\n")
     output_file.write("**numobj%32**\n")
