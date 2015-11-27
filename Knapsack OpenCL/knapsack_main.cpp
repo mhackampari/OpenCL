@@ -1,7 +1,7 @@
 /*
  * File:   knapsack_main.cpp
  * Author: terminator
- * 
+ *
  * This work is based on this article:
  * Solving knapsack problems on GPU by V. Boyera, D. El Baza,  M. Elkihel
  * https://cel.archives-ouvertes.fr/hal-01152223/document
@@ -15,8 +15,10 @@
 #include <iostream>
 #include <random>
 #include <algorithm>
+#include <fstream>
 
-#define NUMELEM 240
+#define NUMELEM 700
+#define VERBOSE false
 using namespace std;
 
 class Knapsack {
@@ -26,7 +28,7 @@ class Knapsack {
                 if(get_global_id(0)<maxelem){\
                     if(input_f[c] < input_f[c - weightk] + pk){\
                         output_f[c] = input_f[c - weightk] + pk;\
-                        m_d[c-1] += pown(2.0,i);\
+                        m_d[c-1] += 1 << i;\
                     }\
                     else{\
                     output_f[c] = input_f[c];\
@@ -91,11 +93,15 @@ public:
         vector<int>::iterator it_weight, it_value;
         it_weight = weight.begin();
         it_value = value.begin();
-        for (int i = 0; i < numelem; i++) {
-            cout << i << "weight: " <<  *(it_weight + i) << "\t" << "value: " << *(it_value + i)<< endl;
-        }
 
-    }
+        if(VERBOSE){
+          for (int i = 1; i < numelem; i++){
+            cout << i << "weight: " <<  *(it_weight + i) << "\t" << "value: " << *(it_value + i)<< endl;
+          }
+        }
+      }
+
+ 
 
     void initDevices() {
         err = clGetPlatformIDs(num, platforms.data(), NULL);
@@ -253,8 +259,8 @@ public:
     void printResults() {
         cout << "\nPRINTOUT OF THE RESULTS: " << endl;
         cout << "*************************************************" << endl << endl;
-        cout << "Matrix of decisions M[items][capacity]: " << endl;
-/*
+        /*cout << "Matrix of decisions M[items][capacity]: " << endl;
+
         for (int i = 0; i < ceil(numelem / 32.0) * capacity; i++) {
 
             unsigned int x = ceil(log2(M[i])); //x is the position 0...31
@@ -298,15 +304,46 @@ public:
 
         cout << "SumWeight: " << sum << "\t Capacity: " << capacity << endl;
         cout << "Knapsack's worth: " << worth << "\t Weight of the selected objects: " << capacita << endl;
-        cout << "run_time: " << run_time / numelem * 1.0 << endl;
-        run_time = 0;
+        cout << "run_time: " << run_time / 1000000 << endl;
+        //run_time = 0;
 
         //http://stackoverflow.com/questions/8848575/fastest-way-to-reset-every-value-of-stdvectorint-to-0
-        fill(f0.begin(), f0.end(), 0); // f0.assign(f0.size(),0);
-        fill(f1.begin(), f1.end(), 0); // f1.assign(f1.size(),0);
+        // INUTITLE????
+        //fill(f0.begin(), f0.end(), 0); // f0.assign(f0.size(),0);
+        //fill(f1.begin(), f1.end(), 0); // f1.assign(f1.size(),0);
 
         cout << "*************************************************" << endl;
         cout << "END OF THE PRINTOUT" << endl;
+
+        // persists data to csv
+        ofstream myfile;
+        myfile.open("output.csv");
+        string csv_header = "#Elem, Weight, Value, Capacity, KnapsackW, KnapsackV, AvgTime\n";
+        myfile << csv_header;
+
+        //fist row
+        myfile  << numelem << ", "
+                << weight[0] << ", "
+                << value[0] << ", "
+                << capacity << ", "
+                << capacita << ", "
+                << worth << ", "
+                << run_time/1000000 << endl;
+
+        for (int i = 1; i < numelem; i++) {
+
+          myfile  << ", "
+                  << weight[i] << ", "
+                  << value[i] << ", "
+                  << ", "
+                  << ", "
+                  << ", "
+                  << ", "
+                  << ", " << endl;
+            }
+
+
+
 
     }
 
@@ -542,6 +579,7 @@ int main(int argc, char** argv) {
         int capacity = ksack.getCapacity();
         sumK = ksack.getSum();
         int numelem = ksack.getNumelem();
+        int j = 0;
 
         ksack.writeBufferToDevice(ksack.f0_mem, ksack.f1_mem, ksack.getf0Ptr(), ksack.getf1Ptr());
         for (int k = 0; k < numelem; k++) {
@@ -552,7 +590,7 @@ int main(int argc, char** argv) {
             if (total_elements > 0) { //in case one element exceeds the whole capacity
 
                 //SWAPPING TWO BUFFERS
-                if (k % 2 == 0) {
+                if (j % 2 == 0) {
                     ksack.setKernelArgs(ksack.f0_mem, ksack.f1_mem, cmax, total_elements, k, k % 32);
                 } else {
                     ksack.setKernelArgs(ksack.f1_mem, ksack.f0_mem, cmax, total_elements, k, k % 32);
@@ -560,11 +598,13 @@ int main(int argc, char** argv) {
                 ksack.executeNDRange(total_elements, i);
             }
 
+            j += 1;
+
             if (k % 32 == 31) {
                 ksack.readBuffer_m_d_FromDevice();
                 //memcpy(M + k*capacity, m_d, sizeof (int)*capacity);
                 ksack.writeToM(k_M);
-                ksack.writeBuffer_m_d_ToDevice(); //resets m_d_mem 
+                ksack.writeBuffer_m_d_ToDevice(); //resets m_d_mem
 
                 k_M += 1;
             }
@@ -575,6 +615,7 @@ int main(int argc, char** argv) {
             ksack.readBuffer_m_d_FromDevice();
             //memcpy(M + k*capacity, m_d, sizeof (int)*capacity);
             ksack.writeToM(k_M);
+
         }
 
     }//for device
