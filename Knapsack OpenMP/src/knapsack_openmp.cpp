@@ -16,7 +16,7 @@
 
 using namespace std;
 #ifndef PRINT
-#define PRINT true
+#define PRINT false
 #endif
 
 #ifndef VERBOSE
@@ -28,7 +28,7 @@ using namespace std;
 #endif
 
 #ifndef NCYCLES
-#define NCYCLES 1
+#define NCYCLES 20
 #endif
 
 using namespace std;
@@ -40,8 +40,8 @@ void printResults(unsigned int capacity, unsigned int sumWeight, unsigned int nu
     cout << "\nPRINTOUT OF THE RESULTS: " << endl;
     cout << "*************************************************" << endl;
 
-    int rows = ceil(numelem / 32.0);
-    int cols = capacity + 1;
+    //int rows = ceil(numelem / 32.0);
+    //int cols = capacity + 1;
 
 #if SUPERVERBOSE
     for (int i = 0; i < rows * cols; i++)
@@ -70,7 +70,7 @@ void printResults(unsigned int capacity, unsigned int sumWeight, unsigned int nu
 	    {
 
 	    unsigned int m = M[i * (capacity+1) + c];
-	    unsigned int x = ceil(log2(M[i * (capacity+1) + c])); // gives the position of the msb: 000100 = 2
+	    //unsigned int x = ceil(log2(M[i * (capacity+1) + c])); // gives the position of the msb: 000100 = 2
 
 	    unsigned int bit32pw = pow(2, (bit32 - 1));
 	    if (bit32pw == (bit32pw & m))
@@ -128,7 +128,11 @@ void init(unsigned int &capacity, unsigned int &sumWeight, unsigned int numelem,
 
 int main(int argc, char** argv)
     {
-    fstream out_file("knapsack_results.txt", ios::out);
+    fstream out_file("knapsack_results.csv", ios::out);
+		//header csv file
+		out_file << "# of elements, ";
+		out_file << "Omp time[s]" << endl;
+
     unsigned int numelem[] =
 	{
 	1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000
@@ -238,18 +242,19 @@ int main(int argc, char** argv)
 	    free(value);
 	    free(weight);
 
+			cout << "cycle: " << j << endl;
+
 	    }
 
 	time_chrono = time_chrono / (double) NCYCLES;
 	time_omp = time_omp / (double) NCYCLES;
 
 	cout << "# of elements: " << numelem[i] << endl;
-	cout << "Average time[ms]: " << time_chrono << endl;
-	cout << "Omp time[s]: " << time_omp << endl;
+	cout << "Omp avg time[s]: " << time_omp << endl;
 
-	out_file << "# of elements: " << numelem[i] << endl;
-	out_file << "Average time[ms]: " << time_chrono << endl;
-	out_file << "Omp time[s]: " << time_omp << endl;
+
+	out_file << numelem[i] << ",
+	out_file << time_omp << endl;
 	cout << "#######################################################\n";
 
 	}
@@ -258,12 +263,11 @@ int main(int argc, char** argv)
     cout << "Execution-chrono time[ms]: " << echrono.getElapsedChrono() << endl;
     cout << "Execution-Omp time: " << echrono.getElapsedOmpTime() << endl;
     cout << "Execution-time : " << echrono.getElapsedTime() << endl;
-    out_file << "Execution-chrono time[ms]: " << echrono.getElapsedChrono()
-	    << endl;
-    out_file << "Execution-Omp time: " << echrono.getElapsedOmpTime() << endl;
-    out_file << "Execution-time : " << echrono.getElapsedTime() << endl;
+    //out_file << "Execution-chrono time[ms]: " << echrono.getElapsedChrono()
+	    //<< endl;
+    //out_file << "Execution-Omp time: " << echrono.getElapsedOmpTime() << endl;
+    //out_file << "Execution-time : " << echrono.getElapsedTime() << endl;
 
     out_file.close();
     return 0;
     }
-

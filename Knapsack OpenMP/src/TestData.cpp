@@ -1,7 +1,7 @@
-/* 
+/*
  * File:   TestData.cpp
  * Author: terminator
- * 
+ *
  * Created on April 21, 2015, 2:40 PM
  */
 #ifdef _WIN32
@@ -75,13 +75,15 @@ TestData::TestData(int numel, bool verbose) {
     unsigned int ram_capacity = 0;
 
 #ifdef __linux__
+    if(verbose)
     cout << "__LINUX__ MACRO\n";
     struct sysinfo info;
     if (sysinfo(&info) != 0)
         cout << "sysinfo error";
+    if(verbose){
     cout << "INFO FREE RAM: " << (float)info.freeram/(1024*1024*1024) << "GB\n";
     cout << "INFO AVAILABLE RAM: " << (float)info.totalram/(1024*1024*1024) << "GB\n";
-
+    }
     //we cannot allocate the whole ram, just a % of it
     ram_capacity = info.freeram * 0.8;
     ram_capacity = info.totalram;
@@ -106,7 +108,7 @@ TestData::TestData(int numel, bool verbose) {
     }
     else{
         capacity = ram_capacity/(numel/32*sizeof(unsigned int));
-        cout << "RAM IS NOT SUFFICENT: Reducing capacity from: " 
+        cout << "RAM IS NOT SUFFICENT: Reducing capacity from: "
         << (sum / 2) <<" to: " << capacity;
     }
 
@@ -140,5 +142,3 @@ int TestData::getCapacity() {
 int TestData::getNumelem() {
     return numelem;
 }
-
-
