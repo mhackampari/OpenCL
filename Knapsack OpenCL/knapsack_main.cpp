@@ -2,7 +2,7 @@
  * File:   knapsack_main.cpp
  * Author: terminator
  *
- * This work is based on this article:
+ * This work is based on the following article:
  * Solving knapsack problems on GPU by V. Boyera, D. El Baza,  M. Elkihel
  * https://cel.archives-ouvertes.fr/hal-01152223/document
  * related work: Accelerating the knapsack problem on GPUs by Bharath Suri
@@ -16,10 +16,62 @@
 #include <random>
 #include <algorithm>
 #include <fstream>
+#include <chrono>
 
-#define NUMELEM 700
 #define VERBOSE false
 using namespace std;
+
+class Chrono{
+public:
+    bool resetted;
+    bool running;
+
+    chrono::high_resolution_clock::time_point start_chrono;
+    chrono::high_resolution_clock::time_point end_chrono;
+    chrono::duration<int, std::milli> elapsed_chrono_time;
+    public:Chrono() {
+
+	resetted = true;
+	running = false;
+
+    }
+
+    ~Chrono() {
+	cout << "Chrono destroyed\n";
+    }
+
+    public: void startChrono() {
+	running = true;
+	start_chrono = std::chrono::high_resolution_clock::now();
+
+    }
+
+    public: void stopChrono() {
+	if (running) {
+	    end_chrono = std::chrono::high_resolution_clock::now();
+	    running = false;
+	}
+    }
+
+    void resetChrono() {
+	if (isRunningChrono())
+	    stopChrono();
+	resetted = true;
+    }
+
+    bool isRunningChrono() {
+	return running;
+    }
+
+    public: unsigned long getElapsedChrono() {
+	if (running) {
+	    stopChrono();
+	}
+	elapsed_chrono_time = chrono::duration_cast<
+		std::chrono::milliseconds>(end_chrono - start_chrono);
+	return elapsed_chrono_time.count();
+    }
+};
 
 class Knapsack {
     const string kernelString =
@@ -38,7 +90,7 @@ class Knapsack {
 private:
     int capacity;
     int sum;
-    int numelem = NUMELEM;
+    int numelem;
     cl_int err;
     vector<int> weight;
     vector<int> value;
@@ -55,6 +107,9 @@ private:
 
     vector<cl_platform_id> platforms;
     vector<cl_device_id> device_id;
+public:
+    string devicestr;
+    string platformstr;
 public:
     cl_mem in_even_mem, in_odd_mem, out_even_mem, out_odd_mem, m_d_mem, f0_mem, f1_mem;
     vector<int> f0;
@@ -83,9 +138,9 @@ public:
 	uniform_int_distribution<int> unifdist(1, numelem);
 
 	for (int i = 0; i < numelem; i++) {
-	    weight[i] = rand()%numelem+1;//unifdist(random_engine);
+	    weight[i] = rand()%100+1;//unifdist(random_engine);
 	    sum += weight[i];
-	    value[i] = weight[i] + rand()%numelem + 1 ;
+	    value[i] = weight[i] + rand()%100 + 1 ;
 	}
 
 	capacity = sum / 2;
@@ -111,6 +166,8 @@ public:
 	char queryBuffer[1024];
 	clGetDeviceInfo(device_id[0],CL_DEVICE_NAME, sizeof(queryBuffer), queryBuffer, NULL);
 	cout << string(queryBuffer) << endl;
+	platformstr = string(queryPlatform);
+	devicestr = string(queryBuffer);
     }
 
     void initDevices(cl_platform_id *platforms) {
@@ -287,7 +344,9 @@ public:
 
 	for (int i = ceil(numelem / 32.0) - 1; i >= 0; i--) {
 	    bit32 = 32;
+#if VERBOSE
 	    cout << "**numelem / 32.0**" << endl;
+#endif
 	    while (bit32 > 0 && c > 0) {
 
 		unsigned int m = M[i * capacity + (c - 1)];
@@ -295,9 +354,11 @@ public:
 
 		unsigned int bit32pw = pow(2, (bit32 - 1));
 		if (bit32pw == (bit32pw & m)) { //binary: 1000 == 1000 <- (1000 & 1010)
+#if VERBOSE
 		    cout << "M" << i * capacity + (c - 1) << ": " << M[i * capacity + (c - 1)] << endl;
 		    cout << x << "; ";
 		    cout << i * 32 + bit32 - 1 << " \tvalue: " << value[i * 32 + bit32 - 1] << "\tweight: " << weight[i * 32 + bit32 - 1] << endl;
+#endif
 		    c -= weight[i * 32 + bit32 - 1];
 		    capacita += weight[i * 32 + bit32 - 1];
 		    worth += value[i * 32 + bit32 - 1];
@@ -323,35 +384,6 @@ public:
 
 	cout << "*************************************************" << endl;
 	cout << "END OF THE PRINTOUT" << endl;
-
-	// persists data to csv
-	ofstream myfile;
-	myfile.open("output.csv");
-	string csv_header = "#Elem, Weight, Value, Capacity, KnapsackW, KnapsackV, AvgTime\n";
-	myfile << csv_header;
-
-	//fist row
-	myfile  << numelem << ", "
-		<< weight[0] << ", "
-		<< value[0] << ", "
-		<< capacity << ", "
-		<< capacita << ", "
-		<< worth << ", "
-		<< run_time/1000000 << endl;
-
-	for (int i = 1; i < numelem; i++) {
-
-	    myfile  << ", "
-		    << weight[i] << ", "
-		    << value[i] << ", "
-		    << ", "
-		    << ", "
-		    << ", "
-		    << ", "
-		    << ", " << endl;
-	}
-
-
 
 
     }
@@ -569,8 +601,9 @@ public:
 };
 
 int main(int argc, char** argv) {
-
-    int elements[] = {10, 20, 30};//, 4000, 5000, 6000, 7000, 8000, 9000 ,10000};
+    Chrono chrono;
+    unsigned long chronosum = 0;
+    int elements[] = {1000, 2000, 3000};//, 4000, 5000, 6000, 7000, 8000, 9000 ,10000};
     int num_elements = sizeof(elements)/sizeof(int);
     vector<cl_platform_id> platform;
     cl_uint num_platforms = 0;
@@ -578,6 +611,12 @@ int main(int argc, char** argv) {
     clGetPlatformIDs(0, NULL, &num_platforms);
     platform.resize(num_platforms);
     clGetPlatformIDs(num_platforms, platform.data(), NULL);
+
+    // persists data to csv
+    ofstream myfile;
+    myfile.open("output.csv");
+    string csv_header = "#Elem, Device, Platform, AvgTime\n";
+    myfile << csv_header;
 
     for(int k = 0; k<num_elements; k++){
 
@@ -591,7 +630,7 @@ int main(int argc, char** argv) {
 	    clGetDeviceIDs(platform[l], CL_DEVICE_TYPE_ALL, num_devices, device.data(), NULL);
 
 	    for (int i = 0; i < num_devices; i++) {
-
+		chronosum = 0;
 		Knapsack ksack(elements[k], device[i], platform[l]);
 		//ksack.initDevices(&platform[l]);
 
@@ -609,13 +648,12 @@ int main(int argc, char** argv) {
 		sumK = ksack.getSum();
 		int numelem = ksack.getNumelem();
 		int j = 0;
-		cout << numelem << endl;
-
 		ksack.writeBufferToDevice(ksack.f0_mem, ksack.f1_mem, ksack.getf0Ptr(), ksack.getf1Ptr());
+
+		chrono.startChrono();
 		for (int k = 0; k < numelem; k++) {
 
 		    sumK = sumK - ksack.getWeight(k);
-		    cout << sumK << " " << k << endl;
 		    cmax = max(capacity - sumK, ksack.getWeight(k));
 		    total_elements = capacity - cmax + 1;
 		    if (total_elements > 0) { //in case one element exceeds the whole capacity
@@ -641,6 +679,9 @@ int main(int argc, char** argv) {
 		    }
 
 		}
+		chrono.stopChrono();
+		chronosum += chrono.getElapsedChrono();
+		cout << "chrono.getElapsedChrono(): " << chrono.getElapsedChrono() << endl;
 
 		if (numelem % 32 != 0) {
 		    ksack.readBuffer_m_d_FromDevice();
@@ -651,6 +692,7 @@ int main(int argc, char** argv) {
 
 		ksack.cleanUp();
 		ksack.printResults();
+		myfile << elements[k]<< ", " <<ksack.devicestr << ", " << ksack.platformstr << ", " << chronosum << endl;
 
 	    }//for device
 
