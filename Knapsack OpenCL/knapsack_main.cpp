@@ -19,6 +19,7 @@
 #include <chrono>
 
 #define VERBOSE false
+#define CYCLES 20
 using namespace std;
 
 class Chrono{
@@ -29,48 +30,48 @@ public:
     chrono::high_resolution_clock::time_point start_chrono;
     chrono::high_resolution_clock::time_point end_chrono;
     chrono::duration<int, std::milli> elapsed_chrono_time;
-    public:Chrono() {
+public:Chrono() {
 
-	resetted = true;
-	running = false;
+resetted = true;
+running = false;
 
-    }
+}
 
-    ~Chrono() {
-	cout << "Chrono destroyed\n";
-    }
+~Chrono() {
+    cout << "Chrono destroyed\n";
+}
 
-    public: void startChrono() {
-	running = true;
-	start_chrono = std::chrono::high_resolution_clock::now();
+public: void startChrono() {
+running = true;
+start_chrono = std::chrono::high_resolution_clock::now();
 
-    }
+}
 
-    public: void stopChrono() {
-	if (running) {
-	    end_chrono = std::chrono::high_resolution_clock::now();
-	    running = false;
-	}
-    }
+public: void stopChrono() {
+if (running) {
+    end_chrono = std::chrono::high_resolution_clock::now();
+    running = false;
+}
+}
 
-    void resetChrono() {
-	if (isRunningChrono())
-	    stopChrono();
-	resetted = true;
-    }
+void resetChrono() {
+    if (isRunningChrono())
+	stopChrono();
+    resetted = true;
+}
 
-    bool isRunningChrono() {
-	return running;
-    }
+bool isRunningChrono() {
+    return running;
+}
 
-    public: unsigned long getElapsedChrono() {
-	if (running) {
-	    stopChrono();
-	}
-	elapsed_chrono_time = chrono::duration_cast<
-		std::chrono::milliseconds>(end_chrono - start_chrono);
-	return elapsed_chrono_time.count();
-    }
+public: unsigned long getElapsedChrono() {
+if (running) {
+    stopChrono();
+}
+elapsed_chrono_time = chrono::duration_cast<
+	std::chrono::milliseconds>(end_chrono - start_chrono);
+return elapsed_chrono_time.count();
+}
 };
 
 class Knapsack {
@@ -128,6 +129,7 @@ public:
     platforms.push_back(platform);
     device_id.push_back(device);
     getDeviceInfo();
+
     }
 
     void generateRandomData(int numelem) {
@@ -162,10 +164,14 @@ public:
     void getDeviceInfo() {
 	char queryPlatform[1024];
 	clGetPlatformInfo(platforms[0], CL_PLATFORM_NAME, sizeof(queryPlatform), queryPlatform, NULL);
+#if VERBOSE
 	cout << string(queryPlatform) << endl;
+#endif
 	char queryBuffer[1024];
 	clGetDeviceInfo(device_id[0],CL_DEVICE_NAME, sizeof(queryBuffer), queryBuffer, NULL);
+#if VERBOSE
 	cout << string(queryBuffer) << endl;
+#endif
 	platformstr = string(queryPlatform);
 	devicestr = string(queryBuffer);
     }
@@ -337,7 +343,6 @@ public:
         }
 	 */
 	int c = capacity;
-	unsigned int bit = pow(2, 31);
 	int bit32 = 32;
 	int worth = 0;
 	int capacita = 0;
@@ -369,19 +374,8 @@ public:
 	}
 
 	cout << "Chosen items are:" << endl;
-
-	int cap = capacity;
-
 	cout << "SumWeight: " << sum << "\t Capacity: " << capacity << endl;
 	cout << "Knapsack's worth: " << worth << "\t Weight of the selected objects: " << capacita << endl;
-	cout << "run_time: " << run_time / 1000000 << endl;
-	//run_time = 0;
-
-	//http://stackoverflow.com/questions/8848575/fastest-way-to-reset-every-value-of-stdvectorint-to-0
-	// INUTITLE????
-	//fill(f0.begin(), f0.end(), 0); // f0.assign(f0.size(),0);
-	//fill(f1.begin(), f1.end(), 0); // f1.assign(f1.size(),0);
-
 	cout << "*************************************************" << endl;
 	cout << "END OF THE PRINTOUT" << endl;
 
@@ -601,9 +595,12 @@ public:
 };
 
 int main(int argc, char** argv) {
+
     Chrono chrono;
+    string devicename;
+    string platformname;
     unsigned long chronosum = 0;
-    int elements[] = {1000, 2000, 3000};//, 4000, 5000, 6000, 7000, 8000, 9000 ,10000};
+    int elements[] = {1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000 ,10000};
     int num_elements = sizeof(elements)/sizeof(int);
     vector<cl_platform_id> platform;
     cl_uint num_platforms = 0;
@@ -620,7 +617,7 @@ int main(int argc, char** argv) {
 
     for(int k = 0; k<num_elements; k++){
 
-	for(int l = 0; l<num_platforms; l++){
+	for(uint l = 0; l<num_platforms; l++){
 
 	    clGetDeviceIDs(platform[l], CL_DEVICE_TYPE_ALL, 0, 0, &num_devices);
 	    cout << "number of devices: " << num_devices << endl;
@@ -629,70 +626,81 @@ int main(int argc, char** argv) {
 	    device.resize(num_devices);
 	    clGetDeviceIDs(platform[l], CL_DEVICE_TYPE_ALL, num_devices, device.data(), NULL);
 
-	    for (int i = 0; i < num_devices; i++) {
+	    for (uint i = 0; i < num_devices; i++) {
 		chronosum = 0;
-		Knapsack ksack(elements[k], device[i], platform[l]);
-		//ksack.initDevices(&platform[l]);
+		for (int cycle = 0; cycle < CYCLES; cycle++) {
+		    Knapsack ksack(elements[k], device[i], platform[l]);
+		    //ksack.initDevices(&platform[l]);
 
-		ksack.createContextAndQueue();
-		ksack.createProgramAndBuild();
-		ksack.createKernel();
-		ksack.createMemoryObjects();
+		    ksack.createContextAndQueue();
+		    ksack.createProgramAndBuild();
+		    ksack.createKernel();
+		    ksack.createMemoryObjects();
 
-		int sumK = 0;
+		    int sumK = 0;
 
-		int k_M = 1;
-		int total_elements = 0;
-		int cmax = 0;
-		int capacity = ksack.getCapacity();
-		sumK = ksack.getSum();
-		int numelem = ksack.getNumelem();
-		int j = 0;
-		ksack.writeBufferToDevice(ksack.f0_mem, ksack.f1_mem, ksack.getf0Ptr(), ksack.getf1Ptr());
+		    int k_M = 1;
+		    int total_elements = 0;
+		    int cmax = 0;
+		    int capacity = ksack.getCapacity();
+		    sumK = ksack.getSum();
+		    int numelem = ksack.getNumelem();
+		    int j = 0;
+		    ksack.writeBufferToDevice(ksack.f0_mem, ksack.f1_mem, ksack.getf0Ptr(), ksack.getf1Ptr());
 
-		chrono.startChrono();
-		for (int k = 0; k < numelem; k++) {
+		    chrono.startChrono();
+		    for (int k = 0; k < numelem; k++) {
 
-		    sumK = sumK - ksack.getWeight(k);
-		    cmax = max(capacity - sumK, ksack.getWeight(k));
-		    total_elements = capacity - cmax + 1;
-		    if (total_elements > 0) { //in case one element exceeds the whole capacity
+			sumK = sumK - ksack.getWeight(k);
+			cmax = max(capacity - sumK, ksack.getWeight(k));
+			total_elements = capacity - cmax + 1;
+			if (total_elements > 0) { //in case one element exceeds the whole capacity
 
-			//SWAPPING TWO BUFFERS
-			if (j % 2 == 0) {
-			    ksack.setKernelArgs(ksack.f0_mem, ksack.f1_mem, cmax, total_elements, k, k % 32);
-			} else {
-			    ksack.setKernelArgs(ksack.f1_mem, ksack.f0_mem, cmax, total_elements, k, k % 32);
+			    //SWAPPING TWO BUFFERS
+			    if (j % 2 == 0) {
+				ksack.setKernelArgs(ksack.f0_mem, ksack.f1_mem, cmax, total_elements, k, k % 32);
+			    } else {
+				ksack.setKernelArgs(ksack.f1_mem, ksack.f0_mem, cmax, total_elements, k, k % 32);
+			    }
+			    ksack.executeNDRange(total_elements, i);
 			}
-			ksack.executeNDRange(total_elements, i);
+
+			j += 1;
+
+			if (k % 32 == 31) {
+			    ksack.readBuffer_m_d_FromDevice();
+			    //memcpy(M + k*capacity, m_d, sizeof (int)*capacity);
+			    ksack.writeToM(k_M);
+			    ksack.writeBuffer_m_d_ToDevice(); //resets m_d_mem
+
+			    k_M += 1;
+			}
+
 		    }
+		    chrono.stopChrono();
+		    chronosum += chrono.getElapsedChrono();
+		    cout << "chrono[" << cycle << "]: " << chrono.getElapsedChrono() << endl;
 
-		    j += 1;
-
-		    if (k % 32 == 31) {
+		    if (numelem % 32 != 0) {
 			ksack.readBuffer_m_d_FromDevice();
 			//memcpy(M + k*capacity, m_d, sizeof (int)*capacity);
 			ksack.writeToM(k_M);
-			ksack.writeBuffer_m_d_ToDevice(); //resets m_d_mem
 
-			k_M += 1;
 		    }
+		    devicename = ksack.devicestr;
+		    platformname = ksack.platformstr;
+		    ksack.cleanUp();
+#if VERBOSE
+		    ksack.printResults();
+#endif
 
-		}
-		chrono.stopChrono();
-		chronosum += chrono.getElapsedChrono();
-		cout << "chrono.getElapsedChrono(): " << chrono.getElapsedChrono() << endl;
-
-		if (numelem % 32 != 0) {
-		    ksack.readBuffer_m_d_FromDevice();
-		    //memcpy(M + k*capacity, m_d, sizeof (int)*capacity);
-		    ksack.writeToM(k_M);
-
-		}
-
-		ksack.cleanUp();
-		ksack.printResults();
-		myfile << elements[k]<< ", " <<ksack.devicestr << ", " << ksack.platformstr << ", " << chronosum << endl;
+		}//cycles
+		cout << "**********SUMMARY*******************" << endl;
+		cout << "elements: " << elements[k]<< endl;
+		cout << "device: " << devicename << endl;
+		cout << "platforname: " << platformname << endl;
+		cout << "Average time: " << chronosum/CYCLES << endl;
+		myfile << elements[k]<< ", " << devicename << ", " << platformname << ", " << chronosum/CYCLES << endl;
 
 	    }//for device
 
