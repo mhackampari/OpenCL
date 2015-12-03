@@ -18,8 +18,9 @@
 #include <fstream>
 #include <chrono>
 
+#define PRINTRESULTS false
 #define VERBOSE false
-#define CYCLES 20
+#define CYCLES 10
 using namespace std;
 
 class Chrono{
@@ -677,9 +678,6 @@ int main(int argc, char** argv) {
 			}
 
 		    }
-		    chrono.stopChrono();
-		    chronosum += chrono.getElapsedChrono();
-		    cout << "chrono[" << cycle << "]: " << chrono.getElapsedChrono() << endl;
 
 		    if (numelem % 32 != 0) {
 			ksack.readBuffer_m_d_FromDevice();
@@ -687,10 +685,13 @@ int main(int argc, char** argv) {
 			ksack.writeToM(k_M);
 
 		    }
+		    chrono.stopChrono();
+		    chronosum += chrono.getElapsedChrono();
+		    cout << "chrono[" << cycle << "]: " << chrono.getElapsedChrono() << endl;
 		    devicename = ksack.devicestr;
 		    platformname = ksack.platformstr;
 		    ksack.cleanUp();
-#if VERBOSE
+#if PRINTRESULTS
 		    ksack.printResults();
 #endif
 
